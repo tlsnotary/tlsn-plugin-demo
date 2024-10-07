@@ -1,7 +1,6 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement } from 'react';
 import './index.scss';
 import { useDispatch } from 'react-redux';
-import './index.scss';
 import Header from '../../components/Header';
 import Body from '../../components/Body';
 

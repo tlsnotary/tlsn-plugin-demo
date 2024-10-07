@@ -1,15 +1,16 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import './index.scss';
-import { useDispatch } from 'react-redux';
-import './index.scss';
-
 export default function Body(): ReactElement {
   const [extensionInstalled, setExtensionInstalled] = useState(false);
+  const [pluginID, setPluginID] = useState('');
+
+
+  let client: any;
 
   useEffect(() => {
     const checkExtension = () => {
       //@ts-ignore
-      if (window.tlsn && window.tlsn.installed) {
+      if (typeof window.tlsn !== 'undefined') {
         setExtensionInstalled(true);
       } else {
         return;
@@ -25,35 +26,43 @@ export default function Body(): ReactElement {
     };
   }, []);
 
-  const installExtension = () => {
-    const extensionUrl =
-      'https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph';
-    if (window.chrome && window.chrome.webstore) {
-      window.chrome.webstore.install(
-        extensionUrl,
-        () => alert('Extension installed successfully!'),
-        (err) => alert(`Error: ${err}`),
-      );
-    } else {
-      window.open(extensionUrl, '_blank');
-    }
-  };
-
   async function handleConnect() {
-    //@ts-ignore
-    await window.tlsn.connect();
+    try {
+      //@ts-ignore
+      client = await window.tlsn.connect();
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function handlePluginInstall() {
+    try {
+      const plugin = await client.installPlugin('https://github.com/tlsnotary/tlsn-extension/raw/main/src/assets/plugins/twitter_profile.wasm', { id: 'twitter-plugin' });
+      setPluginID(plugin);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   return (
-    <div>
+    <div className="flex flex-row justify-center gap-3">
       {extensionInstalled ? (
-        <button onClick={handleConnect} className="button">
-          TLSN Connect
-        </button>
+        <div>
+          <button onClick={handleConnect} className="button">
+            TLSN Connect
+          </button>
+          <button onClick={handlePluginInstall} className="button">
+            Install Plugin
+          </button>
+        </div>
       ) : (
-        <button onClick={installExtension} className="button">
+        <a
+          href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
+          target="_blank"
+          className="button"
+        >
           Install TLSN Extension
-        </button>
+        </a>
       )}
     </div>
   );
