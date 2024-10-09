@@ -8,6 +8,8 @@ import classNames from 'classnames';
 import Icon from '../Icon';
 import * as Comlink from 'comlink';
 import { Presentation as TPresentation, Transcript } from 'tlsn-js';
+import type { PresentationJSON } from 'tlsn-js/build/types';
+import Button from '../Button';
 
 const { init, Presentation }: any = Comlink.wrap(
   new Worker(new URL('../../../utils/worker.ts', import.meta.url)),
@@ -15,12 +17,13 @@ const { init, Presentation }: any = Comlink.wrap(
 
 const steps = ['Connect Extension', 'Install Plugin', 'Run Plugin'];
 
+
 export default function Steps(): ReactElement {
   const [extensionInstalled, setExtensionInstalled] = useState(false);
   const [pluginID, setPluginID] = useState('');
   const [step, setStep] = useState<number>(0);
   const [client, setClient] = useState<any>(null);
-  const [pluginData, setPluginData] = useState<any>(null);
+  const [pluginData, setPluginData] = useState<PresentationJSON | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -38,7 +41,7 @@ export default function Steps(): ReactElement {
     };
 
     (async () => {
-      await init({ loggingLevel: 'Info'});
+      await init({ loggingLevel: 'Info' });
     })();
 
     return () => {
@@ -79,20 +82,6 @@ export default function Steps(): ReactElement {
     }
   }
 
-  async function handleVerify() {
-    try {
-      const presentation = (await new Presentation(pluginData.data)) as TPresentation;
-      const proof = await presentation.verify();
-      const transcript = new Transcript({
-        sent: proof.transcript.sent,
-        recv: proof.transcript.recv,
-      })
-      const vk = await presentation.verifyingKey();
-      console.log(transcript.sent(), transcript.recv(), vk);
-    } catch (error) {
-      console.log(error);
-    }
-  }
 
   async function handlePluginInstall() {
     try {
@@ -123,7 +112,6 @@ export default function Steps(): ReactElement {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <button onClick={handleVerify} className='button'>Verify</button>
       {extensionInstalled ? (
         <>
           <div className="flex flex-row items-center gap-2 text-slate-600 font-bold pb-8">
@@ -150,21 +138,9 @@ export default function Steps(): ReactElement {
               </button>
             )}
             {step === 2 && (
-              <button
-                onClick={handleRunPlugin}
-                disabled={loading}
-                className="button"
-              >
-                {loading ? (
-                  <Icon
-                    className="animate-spin"
-                    fa="fa-solid fa-spinner"
-                    size={2}
-                  />
-                ) : (
-                  'Run Plugin'
-                )}
-              </button>
+              <Button onClick={handleRunPlugin} loading={loading}>
+                Run Plugin
+              </Button>
             )}
           </div>
           <Box className="w-full max-w-md mt-6">
@@ -176,6 +152,7 @@ export default function Steps(): ReactElement {
               ))}
             </Stepper>
           </Box>
+          <DisplayPluginData pluginData={pluginData} />
         </>
       ) : (
         <a
@@ -188,4 +165,89 @@ export default function Steps(): ReactElement {
       )}
     </div>
   );
+}
+
+
+function DisplayPluginData({ pluginData }: { pluginData: any }): ReactElement {
+  const [transcript, setTranscript] = useState<any>(null);
+  const [tab, setTab] = useState<'sent' | 'recv'>('sent');
+
+
+  async function handleVerify() {
+    try {
+      const presentation = (await new Presentation(
+        pluginData.data,
+      )) as TPresentation;
+      const proof = await presentation.verify();
+      const transcript = new Transcript({
+        sent: proof.transcript.sent,
+        recv: proof.transcript.recv,
+      });
+      const verifiedData = {
+        sent: transcript.sent(),
+        recv: transcript.recv(),
+      }
+      setTranscript(verifiedData);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const formatDataPreview = (data: PresentationJSON) => {
+    if (!data) return '';
+    return Object.entries(data)
+      .map(([key, value]) => {
+        if (typeof value === 'object' && value !== null) {
+          return `${key}: ${JSON.stringify(value, null, 2)}`;
+        } else if (key === 'data') {
+          const maxLength = 160;
+          const previewData = value.toString().substring(0, maxLength);
+          const formattedData = previewData.match(/.{1,20}/g)?.join('\n');
+          return `${key}: ${formattedData}... ${value.length} more`;
+        } else {
+          return `${key}: ${value}`;
+        }
+      })
+      .join('\n');
+  };
+
+
+  return (
+    <div className="flex justify-center items-center space-x-4 mt-8">
+      <div className="p-4 bg-gray-100 border rounded-md w-96 h-96 text-left overflow-auto">
+        <pre className="text-sm text-gray-700 whitespace-pre-wrap text-[12px]">
+          {formatDataPreview(pluginData)}
+        </pre>
+      </div>
+      <button
+        onClick={handleVerify}
+        className="button"
+      >
+        Verify
+      </button>
+      <div className="w-96 h-96 bg-gray-100 border rounded-md overflow-auto">
+        <div className="flex border-b">
+          <button
+            onClick={() => setTab('sent')}
+            className={`p-2 w-1/2 text-center ${tab === 'sent' ? 'bg-slate-500 text-white' : 'bg-white text-black'}`}
+          >
+            Sent
+          </button>
+          <button
+            onClick={() => setTab('recv')}
+            className={`p-2 w-1/2 text-center ${tab === 'recv' ? 'bg-slate-500 text-white' : 'bg-white text-black'}`}
+          >
+            Received
+          </button>
+        </div>
+        <div className="p-4 text-left">
+          <pre className="text-[10px] text-gray-700 whitespace-pre-wrap">
+            {transcript && (
+              tab === 'sent' ? transcript.sent : transcript.recv
+            )}
+          </pre>
+        </div>
+      </div>
+    </div>
+  )
 }
