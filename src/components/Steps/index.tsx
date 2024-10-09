@@ -5,6 +5,13 @@ import Step from '@mui/material/Step';
 import Box from '@mui/material/Box';
 import StepLabel from '@mui/material/StepLabel';
 import classNames from 'classnames';
+import Icon from '../Icon';
+import * as Comlink from 'comlink';
+import { Presentation as TPresentation, Transcript } from 'tlsn-js';
+
+const { init, Presentation }: any = Comlink.wrap(
+  new Worker(new URL('../../../utils/worker.ts', import.meta.url)),
+);
 
 const steps = ['Connect Extension', 'Install Plugin', 'Run Plugin'];
 
@@ -13,6 +20,8 @@ export default function Steps(): ReactElement {
   const [pluginID, setPluginID] = useState('');
   const [step, setStep] = useState<number>(0);
   const [client, setClient] = useState<any>(null);
+  const [pluginData, setPluginData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const checkExtension = () => {
@@ -27,6 +36,10 @@ export default function Steps(): ReactElement {
     window.onload = () => {
       checkExtension();
     };
+
+    (async () => {
+      await init({ loggingLevel: 'Info'});
+    })();
 
     return () => {
       window.onload = null;
@@ -43,9 +56,46 @@ export default function Steps(): ReactElement {
     }
   }
 
+  async function handleGetHistory() {
+    try {
+      const history = await client.getHistory(
+        'GET',
+        'https://api.x.com/1.1/account/settings.json',
+      );
+      console.log(history);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function handleGetPlugins() {
+    try {
+      const plugins = await client.getPlugins('**', '**', {
+        id: 'twitter-plugin',
+      });
+      console.log(plugins);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function handleVerify() {
+    try {
+      const presentation = (await new Presentation(pluginData.data)) as TPresentation;
+      const proof = await presentation.verify();
+      const transcript = new Transcript({
+        sent: proof.transcript.sent,
+        recv: proof.transcript.recv,
+      })
+      const vk = await presentation.verifyingKey();
+      console.log(transcript.sent(), transcript.recv(), vk);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async function handlePluginInstall() {
     try {
-      console.log(client);
       const plugin = await client.installPlugin(
         'https://github.com/tlsnotary/tlsn-extension/raw/main/src/assets/plugins/twitter_profile.wasm',
         { id: 'twitter-plugin' },
@@ -59,24 +109,33 @@ export default function Steps(): ReactElement {
 
   async function handleRunPlugin() {
     try {
+      setLoading(true);
       const pluginData = await client.runPlugin(pluginID);
+      console.log(pluginData);
+      setLoading(false);
+      setPluginData(pluginData);
+      setStep(3);
     } catch (error) {
+      setLoading(false);
       console.log(error);
     }
   }
 
-
   return (
     <div className="flex flex-col items-center gap-4">
+      <button onClick={handleVerify} className='button'>Verify</button>
       {extensionInstalled ? (
         <>
           <div className="flex flex-row items-center gap-2 text-slate-600 font-bold pb-8">
             Connected{' '}
             <div
-              className={classNames('rounded-full h-[10px] w-[10px] border-[2px]', {
-                'bg-green-500': step >= 1,
-                'bg-red-500': step === 0,
-              })}
+              className={classNames(
+                'rounded-full h-[10px] w-[10px] border-[2px]',
+                {
+                  'bg-green-500': step >= 1,
+                  'bg-red-500': step === 0,
+                },
+              )}
             ></div>
           </div>
           <div className="flex gap-3">
@@ -90,7 +149,23 @@ export default function Steps(): ReactElement {
                 Install Plugin
               </button>
             )}
-            {step === 2 && <button onClick={handleRunPlugin} className="button">Run Plugin</button>}
+            {step === 2 && (
+              <button
+                onClick={handleRunPlugin}
+                disabled={loading}
+                className="button"
+              >
+                {loading ? (
+                  <Icon
+                    className="animate-spin"
+                    fa="fa-solid fa-spinner"
+                    size={2}
+                  />
+                ) : (
+                  'Run Plugin'
+                )}
+              </button>
+            )}
           </div>
           <Box className="w-full max-w-md mt-6">
             <Stepper activeStep={step} alternativeLabel>
@@ -106,7 +181,7 @@ export default function Steps(): ReactElement {
         <a
           href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
           target="_blank"
-          className="px-4 py-2 bg-blue-500 text-white rounded-md"
+          className="button"
         >
           Install TLSN Extension
         </a>

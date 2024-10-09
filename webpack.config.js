@@ -46,6 +46,7 @@ var options = {
       {
         // look for .css or .scss files
         test: /\.(css|scss)$/,
+
         // in the `src` directory
         use: [
           {
@@ -70,10 +71,6 @@ var options = {
         test: new RegExp(".(" + fileExtensions.join("|") + ")$"),
         type: "asset/resource",
         exclude: /node_modules/,
-        // loader: 'file-loader',
-        // options: {
-        //   name: '[name].[ext]',
-        // },
       },
       {
         test: /\.html$/,
@@ -114,6 +111,10 @@ var options = {
         ],
         exclude: /node_modules/,
       },
+      {
+        test: /\.wasm$/,
+        type: 'webassembly/async',
+      },
     ],
   },
   resolve: {
@@ -134,6 +135,15 @@ var options = {
       chunks: ["index"],
       cache: false,
     }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: 'node_modules/tlsn-js/build',
+          to: path.join(__dirname, 'build'),
+          force: true,
+        },
+      ],
+    }),
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
     }),
@@ -150,6 +160,10 @@ var options = {
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Opener-Policy': 'same-origin',
     }
+  },
+  // Enable WebAssembly support
+  experiments: {
+    asyncWebAssembly: true,
   },
 };
 
