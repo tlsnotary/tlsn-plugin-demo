@@ -33,7 +33,7 @@ export default function Steps(): ReactElement {
         setTimeout(async () => {
           // temporary fix until extension events added
           // @ts-ignore
-          await window.tlsn.connect();
+          setClient(await window.tlsn.connect());
           setStep(1);
         }, 50);
       } else {
