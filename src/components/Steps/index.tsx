@@ -17,7 +17,6 @@ const { init, Presentation }: any = Comlink.wrap(
 
 const steps = ['Connect Extension', 'Install Plugin', 'Run Plugin'];
 
-
 export default function Steps(): ReactElement {
   const [extensionInstalled, setExtensionInstalled] = useState(false);
   const [pluginID, setPluginID] = useState('');
@@ -31,6 +30,12 @@ export default function Steps(): ReactElement {
       //@ts-ignore
       if (typeof window.tlsn !== 'undefined') {
         setExtensionInstalled(true);
+        setTimeout(async () => {
+          // temporary fix until extension events added
+          // @ts-ignore
+          await window.tlsn.connect();
+          setStep(1);
+        }, 50);
       } else {
         return;
       }
@@ -82,7 +87,6 @@ export default function Steps(): ReactElement {
     }
   }
 
-
   async function handlePluginInstall() {
     try {
       const plugin = await client.installPlugin(
@@ -100,7 +104,6 @@ export default function Steps(): ReactElement {
     try {
       setLoading(true);
       const pluginData = await client.runPlugin(pluginID);
-      console.log(pluginData);
       setLoading(false);
       setPluginData(pluginData);
       setStep(3);
@@ -152,7 +155,7 @@ export default function Steps(): ReactElement {
               ))}
             </Stepper>
           </Box>
-          <DisplayPluginData pluginData={pluginData} />
+          <DisplayPluginData step={step} pluginData={pluginData} />
         </>
       ) : (
         <a
@@ -167,11 +170,15 @@ export default function Steps(): ReactElement {
   );
 }
 
-
-function DisplayPluginData({ pluginData }: { pluginData: any }): ReactElement {
+function DisplayPluginData({
+  step,
+  pluginData,
+}: {
+  step: number;
+  pluginData: any;
+}): ReactElement {
   const [transcript, setTranscript] = useState<any>(null);
   const [tab, setTab] = useState<'sent' | 'recv'>('sent');
-
 
   async function handleVerify() {
     try {
@@ -186,7 +193,7 @@ function DisplayPluginData({ pluginData }: { pluginData: any }): ReactElement {
       const verifiedData = {
         sent: transcript.sent(),
         recv: transcript.recv(),
-      }
+      };
       setTranscript(verifiedData);
     } catch (error) {
       console.log(error);
@@ -211,43 +218,48 @@ function DisplayPluginData({ pluginData }: { pluginData: any }): ReactElement {
       .join('\n');
   };
 
-
   return (
     <div className="flex justify-center items-center space-x-4 mt-8">
-      <div className="p-4 bg-gray-100 border rounded-md w-96 h-96 text-left overflow-auto">
-        <pre className="text-sm text-gray-700 whitespace-pre-wrap text-[12px]">
-          {formatDataPreview(pluginData)}
-        </pre>
-      </div>
-      <button
-        onClick={handleVerify}
-        className="button"
-      >
-        Verify
-      </button>
-      <div className="w-96 h-96 bg-gray-100 border rounded-md overflow-auto">
-        <div className="flex border-b">
-          <button
-            onClick={() => setTab('sent')}
-            className={`p-2 w-1/2 text-center ${tab === 'sent' ? 'bg-slate-500 text-white' : 'bg-white text-black'}`}
-          >
-            Sent
-          </button>
-          <button
-            onClick={() => setTab('recv')}
-            className={`p-2 w-1/2 text-center ${tab === 'recv' ? 'bg-slate-500 text-white' : 'bg-white text-black'}`}
-          >
-            Received
-          </button>
+      <div className="w-96">
+        <div className="p-2 bg-gray-200 border-t rounded-t-md text-center text-lg font-semibold">
+          Attestation
         </div>
-        <div className="p-4 text-left">
-          <pre className="text-[10px] text-gray-700 whitespace-pre-wrap">
-            {transcript && (
-              tab === 'sent' ? transcript.sent : transcript.recv
-            )}
+        <div className="p-4 bg-gray-100 border rounded-b-md h-96 text-left overflow-auto">
+          <pre className="text-sm text-gray-700 whitespace-pre-wrap text-[12px]">
+            {formatDataPreview(pluginData)}
           </pre>
         </div>
       </div>
+      <button disabled={step !== 3} onClick={handleVerify} className="button">
+        Verify
+      </button>
+      <div className="w-96">
+        <div className="p-2 bg-gray-200 border-t rounded-t-md text-center text-lg font-semibold">
+          Presentation
+        </div>
+        <div className="bg-gray-100 border rounded-b-md h-96 overflow-auto">
+          <div className="flex border-b">
+            <button
+              onClick={() => setTab('sent')}
+              className={`p-2 w-1/2 text-center ${tab === 'sent' ? 'bg-slate-500 text-white' : 'bg-white text-black'}`}
+            >
+              Sent
+            </button>
+            <button
+              onClick={() => setTab('recv')}
+              className={`p-2 w-1/2 text-center ${tab === 'recv' ? 'bg-slate-500 text-white' : 'bg-white text-black'}`}
+            >
+              Received
+            </button>
+          </div>
+          <div className="p-4 text-left">
+            <pre className="text-[10px] text-gray-700 whitespace-pre-wrap">
+              {transcript &&
+                (tab === 'sent' ? transcript.sent : transcript.recv)}
+            </pre>
+          </div>
+        </div>
+      </div>
     </div>
-  )
+  );
 }
