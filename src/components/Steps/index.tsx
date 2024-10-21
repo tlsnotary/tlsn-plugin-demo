@@ -23,7 +23,8 @@ export default function Steps(): ReactElement {
   const [step, setStep] = useState<number>(0);
   const [client, setClient] = useState<any>(null);
   const [pluginData, setPluginData] = useState<PresentationJSON | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [pluginInstalled, setPluginInstalled] = useState<boolean>(false);
 
   useEffect(() => {
     const checkExtension = () => {
@@ -54,19 +55,6 @@ export default function Steps(): ReactElement {
     };
   }, []);
 
-  // useEffect(() => {
-  //   const fetchPlugins = async () => {
-  //     if (step === 1) {
-  //       const plugins = await handleGetPlugins();
-  //       console.log(plugins);
-  //     }
-  //   };
-
-  //   fetchPlugins();
-  //   return () => {};
-  // }, [step]);
-
-
   async function handleConnect() {
     try {
       //@ts-ignore
@@ -94,7 +82,11 @@ export default function Steps(): ReactElement {
       const plugins = await client.getPlugins('**', '**', {
         id: 'twitter-plugin',
       });
-      console.log(plugins);
+      if (plugins.length > 0) {
+        setStep(2);
+      } else {
+        setPluginInstalled(true);
+      }
     } catch (error) {
       console.log(error);
     }
@@ -149,9 +141,18 @@ export default function Steps(): ReactElement {
               </button>
             )}
             {step === 1 && (
-              <button onClick={handlePluginInstall} className="button">
-                Install Plugin
-              </button>
+              <div className="flex flex-col gap-2">
+                <button className="button" onClick={handleGetPlugins}>
+                  Check Plugins
+                </button>
+                <button
+                  onClick={handlePluginInstall}
+                  disabled={!pluginInstalled}
+                  className="button"
+                >
+                  Install Plugin
+                </button>
+              </div>
             )}
             {step === 2 && (
               <Button onClick={handleRunPlugin} loading={loading}>
@@ -171,20 +172,19 @@ export default function Steps(): ReactElement {
           <DisplayPluginData step={step} pluginData={pluginData} />
         </>
       ) : (
-        <div className='flex flex-col justify-center items-center gap-2'>
-        <a
-          href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
-          target="_blank"
-          className="button"
-        >
-          Install TLSN Extension
-        </a>
-        <p className='font-bold'>
-          Please install the extension to proceed.{' '}
-        </p>
-        <p className='font-bold'>
-        You will need to refresh your browser after installing the extension.
-        </p>
+        <div className="flex flex-col justify-center items-center gap-2">
+          <a
+            href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
+            target="_blank"
+            className="button"
+          >
+            Install TLSN Extension
+          </a>
+          <p className="font-bold">Please install the extension to proceed. </p>
+          <p className="font-bold">
+            You will need to refresh your browser after installing the
+            extension.
+          </p>
         </div>
       )}
     </div>
