@@ -54,6 +54,19 @@ export default function Steps(): ReactElement {
     };
   }, []);
 
+  // useEffect(() => {
+  //   const fetchPlugins = async () => {
+  //     if (step === 1) {
+  //       const plugins = await handleGetPlugins();
+  //       console.log(plugins);
+  //     }
+  //   };
+
+  //   fetchPlugins();
+  //   return () => {};
+  // }, [step]);
+
+
   async function handleConnect() {
     try {
       //@ts-ignore
@@ -158,6 +171,7 @@ export default function Steps(): ReactElement {
           <DisplayPluginData step={step} pluginData={pluginData} />
         </>
       ) : (
+        <div className='flex flex-col justify-center items-center gap-2'>
         <a
           href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
           target="_blank"
@@ -165,6 +179,13 @@ export default function Steps(): ReactElement {
         >
           Install TLSN Extension
         </a>
+        <p className='font-bold'>
+          Please install the extension to proceed.{' '}
+        </p>
+        <p className='font-bold'>
+        You will need to refresh your browser after installing the extension.
+        </p>
+        </div>
       )}
     </div>
   );
