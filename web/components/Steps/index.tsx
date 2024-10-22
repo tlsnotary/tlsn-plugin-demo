@@ -5,15 +5,8 @@ import Step from '@mui/material/Step';
 import Box from '@mui/material/Box';
 import StepLabel from '@mui/material/StepLabel';
 import classNames from 'classnames';
-import Icon from '../Icon';
-import * as Comlink from 'comlink';
-import { Presentation as TPresentation, Transcript } from 'tlsn-js';
 import type { PresentationJSON } from 'tlsn-js/build/types';
 import Button from '../Button';
-
-const { init, Presentation }: any = Comlink.wrap(
-  new Worker(new URL('../../../utils/worker.ts', import.meta.url)),
-);
 
 const steps = ['Connect Extension', 'Install Plugin', 'Run Plugin'];
 
@@ -36,7 +29,7 @@ export default function Steps(): ReactElement {
           // @ts-ignore
           setClient(await window.tlsn.connect());
           setStep(1);
-        }, 50);
+        }, 500);
       } else {
         return;
       }
@@ -47,7 +40,8 @@ export default function Steps(): ReactElement {
     };
 
     (async () => {
-      await init({ loggingLevel: 'Info' });
+      const { default: init } = await import('tlsn-js');
+      await init();
     })();
 
     return () => {
@@ -203,9 +197,8 @@ function DisplayPluginData({
 
   async function handleVerify() {
     try {
-      const presentation = (await new Presentation(
-        pluginData.data,
-      )) as TPresentation;
+      const { Presentation, Transcript } = await import('tlsn-js');
+      const presentation = await new Presentation(pluginData.data);
       const proof = await presentation.verify();
       const transcript = new Transcript({
         sent: proof.transcript.sent,
