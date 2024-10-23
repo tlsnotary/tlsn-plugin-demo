@@ -5,15 +5,8 @@ import Step from '@mui/material/Step';
 import Box from '@mui/material/Box';
 import StepLabel from '@mui/material/StepLabel';
 import classNames from 'classnames';
-import Icon from '../Icon';
-import * as Comlink from 'comlink';
-import { Presentation as TPresentation, Transcript } from 'tlsn-js';
 import type { PresentationJSON } from 'tlsn-js/build/types';
 import Button from '../Button';
-
-const { init, Presentation }: any = Comlink.wrap(
-  new Worker(new URL('../../../utils/worker.ts', import.meta.url)),
-);
 
 const steps = ['Connect Extension', 'Install Plugin', 'Run Plugin'];
 
@@ -23,7 +16,8 @@ export default function Steps(): ReactElement {
   const [step, setStep] = useState<number>(0);
   const [client, setClient] = useState<any>(null);
   const [pluginData, setPluginData] = useState<PresentationJSON | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [pluginInstalled, setPluginInstalled] = useState<boolean>(false);
 
   useEffect(() => {
     const checkExtension = () => {
@@ -35,7 +29,7 @@ export default function Steps(): ReactElement {
           // @ts-ignore
           setClient(await window.tlsn.connect());
           setStep(1);
-        }, 50);
+        }, 500);
       } else {
         return;
       }
@@ -46,7 +40,8 @@ export default function Steps(): ReactElement {
     };
 
     (async () => {
-      await init({ loggingLevel: 'Info' });
+      const { default: init } = await import('tlsn-js');
+      await init();
     })();
 
     return () => {
@@ -81,7 +76,11 @@ export default function Steps(): ReactElement {
       const plugins = await client.getPlugins('**', '**', {
         id: 'twitter-plugin',
       });
-      console.log(plugins);
+      if (plugins.length > 0) {
+        setStep(2);
+      } else {
+        setPluginInstalled(true);
+      }
     } catch (error) {
       console.log(error);
     }
@@ -136,9 +135,18 @@ export default function Steps(): ReactElement {
               </button>
             )}
             {step === 1 && (
-              <button onClick={handlePluginInstall} className="button">
-                Install Plugin
-              </button>
+              <div className="flex flex-col gap-2">
+                <button className="button" onClick={handleGetPlugins}>
+                  Check Plugins
+                </button>
+                <button
+                  onClick={handlePluginInstall}
+                  disabled={!pluginInstalled}
+                  className="button"
+                >
+                  Install Plugin
+                </button>
+              </div>
             )}
             {step === 2 && (
               <Button onClick={handleRunPlugin} loading={loading}>
@@ -158,13 +166,20 @@ export default function Steps(): ReactElement {
           <DisplayPluginData step={step} pluginData={pluginData} />
         </>
       ) : (
-        <a
-          href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
-          target="_blank"
-          className="button"
-        >
-          Install TLSN Extension
-        </a>
+        <div className="flex flex-col justify-center items-center gap-2">
+          <a
+            href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
+            target="_blank"
+            className="button"
+          >
+            Install TLSN Extension
+          </a>
+          <p className="font-bold">Please install the extension to proceed. </p>
+          <p className="font-bold">
+            You will need to refresh your browser after installing the
+            extension.
+          </p>
+        </div>
       )}
     </div>
   );
@@ -182,9 +197,8 @@ function DisplayPluginData({
 
   async function handleVerify() {
     try {
-      const presentation = (await new Presentation(
-        pluginData.data,
-      )) as TPresentation;
+      const { Presentation, Transcript } = await import('tlsn-js');
+      const presentation = await new Presentation(pluginData.data);
       const proof = await presentation.verify();
       const transcript = new Transcript({
         sent: proof.transcript.sent,

@@ -1,43 +1,43 @@
-var webpack = require("webpack"),
-  path = require("path"),
-  CopyWebpackPlugin = require("copy-webpack-plugin"),
-  HtmlWebpackPlugin = require("html-webpack-plugin"),
-  TerserPlugin = require("terser-webpack-plugin");
-var { CleanWebpackPlugin } = require("clean-webpack-plugin");
-var ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
-var ReactRefreshTypeScript = require("react-refresh-typescript");
+var webpack = require('webpack'),
+  path = require('path'),
+  CopyWebpackPlugin = require('copy-webpack-plugin'),
+  HtmlWebpackPlugin = require('html-webpack-plugin'),
+  TerserPlugin = require('terser-webpack-plugin');
+var { CleanWebpackPlugin } = require('clean-webpack-plugin');
+var ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+var ReactRefreshTypeScript = require('react-refresh-typescript');
 
-const ASSET_PATH = process.env.ASSET_PATH || "/";
+const ASSET_PATH = process.env.ASSET_PATH || '/';
 
 var alias = {};
 
 var fileExtensions = [
-  "jpg",
-  "jpeg",
-  "png",
-  "gif",
-  "eot",
-  "otf",
-  "svg",
-  "ttf",
-  "woff",
-  "woff2",
+  'jpg',
+  'jpeg',
+  'png',
+  'gif',
+  'eot',
+  'otf',
+  'svg',
+  'ttf',
+  'woff',
+  'woff2',
 ];
 
-const isDevelopment = process.env.NODE_ENV !== "production";
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 var options = {
-  mode: process.env.NODE_ENV || "development",
+  mode: process.env.NODE_ENV || 'development',
   ignoreWarnings: [
     /Circular dependency between chunks with runtime/,
-    /ResizeObserver loop completed with undelivered notifications/
+    /ResizeObserver loop completed with undelivered notifications/,
   ],
   entry: {
-    index: path.join(__dirname, "src", "index.tsx"),
+    index: path.join(__dirname, 'web', 'index.tsx'),
   },
   output: {
-    filename: "[name].bundle.js",
-    path: path.resolve(__dirname, "build"),
+    filename: '[name].bundle.js',
+    path: path.resolve(__dirname, 'build', 'ui'),
     clean: true,
     publicPath: ASSET_PATH,
   },
@@ -50,36 +50,36 @@ var options = {
         // in the `src` directory
         use: [
           {
-            loader: "style-loader",
+            loader: 'style-loader',
           },
           {
-            loader: "css-loader",
+            loader: 'css-loader',
             options: { importLoaders: 1 },
           },
           {
-            loader: "postcss-loader",
+            loader: 'postcss-loader',
           },
           {
-            loader: "sass-loader",
+            loader: 'sass-loader',
             options: {
               sourceMap: true,
             },
           },
         ],
       },
-      {
-        test: new RegExp(".(" + fileExtensions.join("|") + ")$"),
-        type: "asset/resource",
-        exclude: /node_modules/,
-      },
+      // {
+      //   test: new RegExp('.(' + fileExtensions.join('|') + ')$'),
+      //   type: 'asset/resource',
+      //   exclude: /node_modules/,
+      // },
       {
         test: /\.html$/,
-        loader: "html-loader",
+        loader: 'html-loader',
         exclude: /node_modules/,
       },
       {
         test: /\.(ts|tsx)$/,
-        exclude: /node_modules/,
+        exclude: /node_modules\/(?!(tlsn-js|tlsn-js-v5)\/).*/,
         use: [
           {
             loader: require.resolve("ts-loader"),
@@ -90,6 +90,7 @@ var options = {
                 ),
               }),
               transpileOnly: isDevelopment,
+              allowTsInNodeModules: true,
             },
           },
         ],
@@ -98,18 +99,32 @@ var options = {
         test: /\.(js|jsx)$/,
         use: [
           {
-            loader: "source-map-loader",
+            loader: 'source-map-loader',
           },
           {
-            loader: require.resolve("babel-loader"),
+            loader: require.resolve('babel-loader'),
             options: {
               plugins: [
-                isDevelopment && require.resolve("react-refresh/babel"),
+                isDevelopment && require.resolve('react-refresh/babel'),
               ].filter(Boolean),
             },
           },
         ],
         exclude: /node_modules/,
+      },
+      {
+        test: /\.(gif|png|jpe?g|svg)$/i,
+        use: [
+          'file-loader',
+          {
+            loader: 'image-webpack-loader',
+            options: {
+              publicPath: 'assets',
+              bypassOnDebug: true, // webpack@1.x
+              disable: true, // webpack@2.x and newer
+            },
+          },
+        ],
       },
       {
         test: /\.wasm$/,
@@ -120,26 +135,31 @@ var options = {
   resolve: {
     alias: alias,
     extensions: fileExtensions
-      .map((extension) => "." + extension)
-      .concat([".js", ".jsx", ".ts", ".tsx", ".css"]),
+      .map((extension) => '.' + extension)
+      .concat(['.js', '.jsx', '.ts', '.tsx', '.css']),
   },
   plugins: [
     isDevelopment && new ReactRefreshWebpackPlugin(),
     new CleanWebpackPlugin({ verbose: false }),
     new webpack.ProgressPlugin(),
     // expose and write the allowed env vars on the compiled bundle
-    new webpack.EnvironmentPlugin(["NODE_ENV"]),
-    new HtmlWebpackPlugin({
-      template: path.join(__dirname, "static", "index.html"),
-      filename: "index.html",
-      chunks: ["index"],
-      cache: false,
-    }),
+    new webpack.EnvironmentPlugin(['NODE_ENV']),
+    // new HtmlWebpackPlugin({
+    //   template: path.join(__dirname, 'static', 'index.html'),
+    //   filename: 'index.html',
+    //   chunks: ['index'],
+    //   cache: false,
+    // }),
     new CopyWebpackPlugin({
       patterns: [
         {
           from: 'node_modules/tlsn-js/build',
-          to: path.join(__dirname, 'build'),
+          to: path.join(__dirname, 'build', 'ui'),
+          force: true,
+        },
+        {
+          from: "static/favicon.png",
+          to: path.join(__dirname, "build", "ui"),
           force: true,
         },
       ],
@@ -149,7 +169,7 @@ var options = {
     }),
   ].filter(Boolean),
   infrastructureLogging: {
-    level: "info",
+    level: 'info',
   },
   // Required by wasm-bindgen-rayon, in order to use SharedArrayBuffer on the Web
   // Ref:
@@ -159,7 +179,7 @@ var options = {
     headers: {
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Opener-Policy': 'same-origin',
-    }
+    },
   },
   // Enable WebAssembly support
   experiments: {
@@ -167,8 +187,8 @@ var options = {
   },
 };
 
-if (process.env.NODE_ENV === "development") {
-  options.devtool = "cheap-module-source-map";
+if (process.env.NODE_ENV === 'development') {
+  options.devtool = 'cheap-module-source-map';
 } else {
   options.optimization = {
     minimize: true,

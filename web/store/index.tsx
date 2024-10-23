@@ -1,9 +1,10 @@
 import { applyMiddleware, combineReducers, createStore } from 'redux';
-import { thunk } from 'redux-thunk';
+import thunk from 'redux-thunk';
 import { createLogger } from 'redux-logger';
+import attestation from './attestation';
 
 const rootReducer = combineReducers({
-  // Add your reducers here
+  attestation,
 });
 
 export type AppRootState = ReturnType<typeof rootReducer>;
@@ -18,10 +19,11 @@ const createStoreWithMiddleware =
       )(createStore)
     : applyMiddleware(thunk)(createStore);
 
-function configureAppStore() {
-  return createStoreWithMiddleware(rootReducer);
+function configureAppStore(preloadedState?: AppRootState) {
+  const { attestation } = preloadedState || {};
+  return createStoreWithMiddleware(rootReducer, {
+    attestation,
+  });
 }
 
-const store = configureAppStore();
-
-export default store;
+export default configureAppStore;
