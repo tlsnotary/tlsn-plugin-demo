@@ -1,4 +1,5 @@
 import 'isomorphic-fetch';
+import type {} from 'redux-thunk/extend-redux';
 import * as React from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -11,7 +12,6 @@ const store = configureAppStore(window.__PRELOADED_STATE__);
 
 // @ts-ignore
 delete window.__PRELOADED_STATE__;
-
 
 (async () => {
   hydrateRoot(
