@@ -3,14 +3,24 @@ import * as React from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './pages/App';
-('use client');
+import { Provider } from 'react-redux';
+import configureAppStore from './store';
+
+// @ts-ignore
+const store = configureAppStore(window.__PRELOADED_STATE__);
+
+// @ts-ignore
+delete window.__PRELOADED_STATE__;
+
 
 (async () => {
   hydrateRoot(
     document.getElementById('root')!,
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>,
+    <Provider store={store}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </Provider>,
   );
 })();
 

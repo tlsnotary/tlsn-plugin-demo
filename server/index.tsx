@@ -3,6 +3,9 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import App from '../web/pages/App';
+import configureAppStore, { AppRootState } from '../web/store';
+import { Provider } from 'react-redux';
+
 
 const app = express();
 const port = 3000;
@@ -30,16 +33,31 @@ app.use((req, res, next) => {
 app.use(express.static('build/ui'));
 
 app.get('*', (req, res) => {
-  const storeConfig = {
-    reducer: {},
-    devTools: process.env.NODE_ENV !== 'production',
+
+  const storeConfig: AppRootState = {
+    attestation: {
+        raw: {
+          version: '0.1.0-alpha.7',
+          data: '',
+          meta: {
+            notaryUrl: '',
+            websocketProxyUrl: '',
+            pluginUrl: '',
+          },
+      }
+    }
   };
+  const store = configureAppStore(storeConfig);
 
   const html = renderToString(
-    <StaticRouter location={req.url}>
-      <App />
-    </StaticRouter>,
+    <Provider store={store}>
+      <StaticRouter location={req.url}>
+        <App />
+      </StaticRouter>
+    </Provider>
   );
+
+  const preloadedState = store.getState();
 
   res.send(`
     <!DOCTYPE html>
@@ -49,6 +67,10 @@ app.get('*', (req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" type="image/png" href="/static/favicon.png" />
         <title>TLSN Plugin Demo</title>
+        <script>
+        window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState)};
+      </script>
+      <script defer src="/index.bundle.js"></script>
       </head>
       <body>
         <div id="root">${html}</div>
