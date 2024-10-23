@@ -41,19 +41,16 @@ const options = {
         ],
       },
       {
-        test: /\.jsx?$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-env', '@babel/preset-react'],
+        test: /\.(ts|tsx)$/,
+        exclude: /node_modules\/(?!(tlsn-js|tlsn-js-v5)\/).*/,
+        use: [
+          {
+            loader: require.resolve("ts-loader"),
+            options: {
+              transpileOnly: isDevelopment,
+            },
           },
-        },
-      },
-      {
-        test: /\.tsx?$/, // Process TypeScript files
-        use: 'ts-loader',
-        exclude: /node_modules/,
+        ],
       },
       {
         // look for .css or .scss files

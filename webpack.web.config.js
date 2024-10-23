@@ -67,11 +67,11 @@ var options = {
           },
         ],
       },
-      {
-        test: new RegExp('.(' + fileExtensions.join('|') + ')$'),
-        type: 'asset/resource',
-        exclude: /node_modules/,
-      },
+      // {
+      //   test: new RegExp('.(' + fileExtensions.join('|') + ')$'),
+      //   type: 'asset/resource',
+      //   exclude: /node_modules/,
+      // },
       {
         test: /\.html$/,
         loader: 'html-loader',
@@ -79,17 +79,18 @@ var options = {
       },
       {
         test: /\.(ts|tsx)$/,
-        exclude: /node_modules/,
+        exclude: /node_modules\/(?!(tlsn-js|tlsn-js-v5)\/).*/,
         use: [
           {
-            loader: require.resolve('ts-loader'),
+            loader: require.resolve("ts-loader"),
             options: {
               getCustomTransformers: () => ({
                 before: [isDevelopment && ReactRefreshTypeScript()].filter(
-                  Boolean,
+                  Boolean
                 ),
               }),
               transpileOnly: isDevelopment,
+              allowTsInNodeModules: true,
             },
           },
         ],
@@ -112,6 +113,20 @@ var options = {
         exclude: /node_modules/,
       },
       {
+        test: /\.(gif|png|jpe?g|svg)$/i,
+        use: [
+          'file-loader',
+          {
+            loader: 'image-webpack-loader',
+            options: {
+              publicPath: 'assets',
+              bypassOnDebug: true, // webpack@1.x
+              disable: true, // webpack@2.x and newer
+            },
+          },
+        ],
+      },
+      {
         test: /\.wasm$/,
         type: 'webassembly/async',
       },
@@ -129,17 +144,22 @@ var options = {
     new webpack.ProgressPlugin(),
     // expose and write the allowed env vars on the compiled bundle
     new webpack.EnvironmentPlugin(['NODE_ENV']),
-    new HtmlWebpackPlugin({
-      template: path.join(__dirname, 'static', 'index.html'),
-      filename: 'index.html',
-      chunks: ['index'],
-      cache: false,
-    }),
+    // new HtmlWebpackPlugin({
+    //   template: path.join(__dirname, 'static', 'index.html'),
+    //   filename: 'index.html',
+    //   chunks: ['index'],
+    //   cache: false,
+    // }),
     new CopyWebpackPlugin({
       patterns: [
         {
           from: 'node_modules/tlsn-js/build',
           to: path.join(__dirname, 'build', 'ui'),
+          force: true,
+        },
+        {
+          from: "static/favicon.png",
+          to: path.join(__dirname, "build", "ui"),
           force: true,
         },
       ],
