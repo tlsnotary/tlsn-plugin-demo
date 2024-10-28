@@ -33,8 +33,6 @@ app.use((req, res, next) => {
 app.use(express.static('build/ui'));
 app.use(express.json());
 
-
-
 app.get('*', (req, res) => {
   const storeConfig: AppRootState = {
     attestation: {

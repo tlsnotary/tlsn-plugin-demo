@@ -1,7 +1,6 @@
 import path from 'path';
 import fs from 'fs';
 
-
 const poapLinksPath = path.join(__dirname, 'util', 'poaps.txt');
 const assignmentsFilePath = path.join(__dirname, 'util', 'assignments.json');
 

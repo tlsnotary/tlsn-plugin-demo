@@ -7,6 +7,7 @@ import StepLabel from '@mui/material/StepLabel';
 import classNames from 'classnames';
 import type { PresentationJSON } from 'tlsn-js/build/types';
 import Button from '../Button';
+import ConfettiExplosion, { ConfettiProps } from 'react-confetti-explosion';
 
 const steps = [
   'Connect Extension',
@@ -25,6 +26,7 @@ export default function Steps(): ReactElement {
   const [pluginInstalled, setPluginInstalled] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<any>(null);
   const [screenName, setScreenName] = useState<string>('');
+  const [exploding, setExploding] = useState<boolean>(false);
 
   useEffect(() => {
     const checkExtension = () => {
@@ -36,7 +38,7 @@ export default function Steps(): ReactElement {
           // @ts-ignore
           setClient(await window.tlsn.connect());
           setStep(1);
-        }, 500);
+        }, 200);
       } else {
         return;
       }
@@ -61,6 +63,7 @@ export default function Steps(): ReactElement {
       const match = transcript.recv.match(/"screen_name":"([^"]+)"/);
       const screenName = match ? match[1] : null;
       setScreenName(screenName);
+      setExploding(true);
     }
   }, [transcript]);
 
@@ -120,7 +123,7 @@ export default function Steps(): ReactElement {
     <div className="flex flex-col items-center gap-4">
       {extensionInstalled ? (
         <>
-          <div className="flex flex-row items-center gap-2 text-slate-600 font-bold pb-8">
+          <div className="flex flex-row items-center gap-2 text-slate-600 font-bold pb-2">
             Connected{' '}
             <div
               className={classNames(
@@ -132,6 +135,15 @@ export default function Steps(): ReactElement {
               )}
             ></div>
           </div>
+          <Box className="w-full max-w-xl mt-6 pb-4">
+            <Stepper activeStep={step} alternativeLabel>
+              {steps.map((label) => (
+                <Step key={label}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </Box>
           <div className="flex gap-3">
             {step === 0 && (
               <button onClick={handleConnect} className="button">
@@ -153,25 +165,22 @@ export default function Steps(): ReactElement {
               </div>
             )}
             {step === 2 && (
-              <Button onClick={handleRunPlugin} loading={loading}>
-                Run Plugin
-              </Button>
+              <div className="flex flex-col items-center justify-center gap-2">
+                <Button onClick={handleRunPlugin} loading={loading}>
+                  Run Plugin
+                </Button>
+                <span className="font-bold">
+                  Please keep the sidebar open during the notarization process
+                </span>
+              </div>
             )}
             {step === 4 && (
               <>
-                <ClaimPoap screen_name={screenName} />
+                <ClaimPoap screen_name={screenName} exploding={exploding} />
               </>
             )}
           </div>
-          <Box className="w-full max-w-xl mt-6">
-            <Stepper activeStep={step} alternativeLabel>
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          </Box>
+
           <DisplayPluginData
             step={step}
             pluginData={pluginData}
@@ -299,7 +308,13 @@ function DisplayPluginData({
   );
 }
 
-function ClaimPoap({ screen_name }: { screen_name: string }): ReactElement {
+function ClaimPoap({
+  screen_name,
+  exploding,
+}: {
+  screen_name: string;
+  exploding: boolean;
+}): ReactElement {
   const [screenName, setScreenName] = useState('');
   const [poapLink, setPoapLink] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -329,6 +344,14 @@ function ClaimPoap({ screen_name }: { screen_name: string }): ReactElement {
     handleClaimPoap();
   }, [screen_name]);
 
+  const mediumProps: ConfettiProps = {
+    force: 0.6,
+    duration: 4000,
+    particleCount: 150,
+    width: 1500,
+    colors: ['#F0FFF', '#F0F8FF', '#483D8B', '#E0FFF', '#778899'],
+  };
+
   return (
     <div>
       {poapLink !== '' && (
@@ -336,6 +359,7 @@ function ClaimPoap({ screen_name }: { screen_name: string }): ReactElement {
           Claim POAP!
         </a>
       )}
+      {exploding && <ConfettiExplosion {...mediumProps} />}
     </div>
   );
 }
