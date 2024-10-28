@@ -81,6 +81,12 @@ const options = {
     new CleanWebpackPlugin({ verbose: false }),
     new webpack.ProgressPlugin(),
     new webpack.EnvironmentPlugin(['NODE_ENV']),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'server/util/poaps.txt', to: 'util/' },
+        { from: 'server/util/assignments.json', to: 'util/'}
+      ],
+    }),
   ].filter(Boolean),
   infrastructureLogging: {
     level: 'info',

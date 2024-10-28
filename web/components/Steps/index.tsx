@@ -7,8 +7,14 @@ import StepLabel from '@mui/material/StepLabel';
 import classNames from 'classnames';
 import type { PresentationJSON } from 'tlsn-js/build/types';
 import Button from '../Button';
+import ConfettiExplosion, { ConfettiProps } from 'react-confetti-explosion';
 
-const steps = ['Connect Extension', 'Install Plugin', 'Run Plugin'];
+const steps = [
+  'Connect Extension',
+  'Install Plugin',
+  'Run Plugin',
+  '🎉 Claim POAP 🎉',
+];
 
 export default function Steps(): ReactElement {
   const [extensionInstalled, setExtensionInstalled] = useState(false);
@@ -18,6 +24,9 @@ export default function Steps(): ReactElement {
   const [pluginData, setPluginData] = useState<PresentationJSON | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [pluginInstalled, setPluginInstalled] = useState<boolean>(false);
+  const [transcript, setTranscript] = useState<any>(null);
+  const [screenName, setScreenName] = useState<string>('');
+  const [exploding, setExploding] = useState<boolean>(false);
 
   useEffect(() => {
     const checkExtension = () => {
@@ -29,7 +38,7 @@ export default function Steps(): ReactElement {
           // @ts-ignore
           setClient(await window.tlsn.connect());
           setStep(1);
-        }, 500);
+        }, 200);
       } else {
         return;
       }
@@ -49,23 +58,20 @@ export default function Steps(): ReactElement {
     };
   }, []);
 
+  useEffect(() => {
+    if (transcript) {
+      const match = transcript.recv.match(/"screen_name":"([^"]+)"/);
+      const screenName = match ? match[1] : null;
+      setScreenName(screenName);
+      setExploding(true);
+    }
+  }, [transcript]);
+
   async function handleConnect() {
     try {
       //@ts-ignore
       setClient(await window.tlsn.connect());
       setStep(1);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async function handleGetHistory() {
-    try {
-      const history = await client.getHistory(
-        'GET',
-        'https://api.x.com/1.1/account/settings.json',
-      );
-      console.log(history);
     } catch (error) {
       console.log(error);
     }
@@ -77,6 +83,7 @@ export default function Steps(): ReactElement {
         id: 'twitter-plugin',
       });
       if (plugins.length > 0) {
+        setPluginID(plugins[0].hash);
         setStep(2);
       } else {
         setPluginInstalled(true);
@@ -116,7 +123,7 @@ export default function Steps(): ReactElement {
     <div className="flex flex-col items-center gap-4">
       {extensionInstalled ? (
         <>
-          <div className="flex flex-row items-center gap-2 text-slate-600 font-bold pb-8">
+          <div className="flex flex-row items-center gap-2 text-slate-600 font-bold pb-2">
             Connected{' '}
             <div
               className={classNames(
@@ -128,6 +135,15 @@ export default function Steps(): ReactElement {
               )}
             ></div>
           </div>
+          <Box className="w-full max-w-xl mt-6 pb-4">
+            <Stepper activeStep={step} alternativeLabel>
+              {steps.map((label) => (
+                <Step key={label}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </Box>
           <div className="flex gap-3">
             {step === 0 && (
               <button onClick={handleConnect} className="button">
@@ -149,21 +165,29 @@ export default function Steps(): ReactElement {
               </div>
             )}
             {step === 2 && (
-              <Button onClick={handleRunPlugin} loading={loading}>
-                Run Plugin
-              </Button>
+              <div className="flex flex-col items-center justify-center gap-2">
+                <Button onClick={handleRunPlugin} loading={loading}>
+                  Run Plugin
+                </Button>
+                <span className="font-bold">
+                  Please keep the sidebar open during the notarization process
+                </span>
+              </div>
+            )}
+            {step === 4 && (
+              <>
+                <ClaimPoap screen_name={screenName} exploding={exploding} />
+              </>
             )}
           </div>
-          <Box className="w-full max-w-md mt-6">
-            <Stepper activeStep={step} alternativeLabel>
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          </Box>
-          <DisplayPluginData step={step} pluginData={pluginData} />
+
+          <DisplayPluginData
+            step={step}
+            pluginData={pluginData}
+            transcript={transcript}
+            setTranscript={setTranscript}
+            setStep={setStep}
+          />
         </>
       ) : (
         <div className="flex flex-col justify-center items-center gap-2">
@@ -188,11 +212,16 @@ export default function Steps(): ReactElement {
 function DisplayPluginData({
   step,
   pluginData,
+  transcript,
+  setTranscript,
+  setStep,
 }: {
   step: number;
   pluginData: any;
+  transcript: any;
+  setTranscript: any;
+  setStep: any;
 }): ReactElement {
-  const [transcript, setTranscript] = useState<any>(null);
   const [tab, setTab] = useState<'sent' | 'recv'>('sent');
 
   async function handleVerify() {
@@ -209,6 +238,7 @@ function DisplayPluginData({
         recv: transcript.recv(),
       };
       setTranscript(verifiedData);
+      setStep(4);
     } catch (error) {
       console.log(error);
     }
@@ -274,6 +304,62 @@ function DisplayPluginData({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ClaimPoap({
+  screen_name,
+  exploding,
+}: {
+  screen_name: string;
+  exploding: boolean;
+}): ReactElement {
+  const [screenName, setScreenName] = useState('');
+  const [poapLink, setPoapLink] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleClaimPoap = async () => {
+      try {
+        if (!screen_name) return;
+        const response = await fetch('/poap-claim', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ screenName: screen_name }),
+        });
+        if (response.status === 200) {
+          const data = await response.json();
+          setPoapLink(data.poapLink);
+        } else {
+          setError(await response.text());
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    handleClaimPoap();
+  }, [screen_name]);
+
+  const mediumProps: ConfettiProps = {
+    force: 0.6,
+    duration: 4000,
+    particleCount: 150,
+    width: 1500,
+    colors: ['#F0FFF', '#F0F8FF', '#483D8B', '#E0FFF', '#778899'],
+  };
+
+  return (
+    <div>
+      {poapLink !== '' && (
+        <a className="button" href={poapLink} target="_blank">
+          Claim POAP!
+        </a>
+      )}
+      {exploding && <ConfettiExplosion {...mediumProps} />}
     </div>
   );
 }
