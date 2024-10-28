@@ -9,7 +9,6 @@ export interface AttestedData {
   verifierKey?: string;
 }
 
-
 export type Attestation = {
   version: '0.1.0-alpha.7';
   data: string;

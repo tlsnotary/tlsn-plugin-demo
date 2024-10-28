@@ -27,7 +27,6 @@
   "ignorePatterns": [
     "node_modules",
     "build",
-    "rs",
     "webpack.web.config.js",
     "webpack.server.config.js",
     "static"

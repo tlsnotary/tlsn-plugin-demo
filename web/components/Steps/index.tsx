@@ -8,7 +8,12 @@ import classNames from 'classnames';
 import type { PresentationJSON } from 'tlsn-js/build/types';
 import Button from '../Button';
 
-const steps = ['Connect Extension', 'Install Plugin', 'Run Plugin'];
+const steps = [
+  'Connect Extension',
+  'Install Plugin',
+  'Run Plugin',
+  '🎉 Claim POAP 🎉',
+];
 
 export default function Steps(): ReactElement {
   const [extensionInstalled, setExtensionInstalled] = useState(false);
@@ -18,6 +23,8 @@ export default function Steps(): ReactElement {
   const [pluginData, setPluginData] = useState<PresentationJSON | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [pluginInstalled, setPluginInstalled] = useState<boolean>(false);
+  const [transcript, setTranscript] = useState<any>(null);
+  const [screenName, setScreenName] = useState<string>('');
 
   useEffect(() => {
     const checkExtension = () => {
@@ -49,23 +56,19 @@ export default function Steps(): ReactElement {
     };
   }, []);
 
+  useEffect(() => {
+    if (transcript) {
+      const match = transcript.recv.match(/"screen_name":"([^"]+)"/);
+      const screenName = match ? match[1] : null;
+      setScreenName(screenName);
+    }
+  }, [transcript]);
+
   async function handleConnect() {
     try {
       //@ts-ignore
       setClient(await window.tlsn.connect());
       setStep(1);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async function handleGetHistory() {
-    try {
-      const history = await client.getHistory(
-        'GET',
-        'https://api.x.com/1.1/account/settings.json',
-      );
-      console.log(history);
     } catch (error) {
       console.log(error);
     }
@@ -77,6 +80,7 @@ export default function Steps(): ReactElement {
         id: 'twitter-plugin',
       });
       if (plugins.length > 0) {
+        setPluginID(plugins[0].hash);
         setStep(2);
       } else {
         setPluginInstalled(true);
@@ -153,8 +157,13 @@ export default function Steps(): ReactElement {
                 Run Plugin
               </Button>
             )}
+            {step === 4 && (
+              <>
+                <ClaimPoap screen_name={screenName} />
+              </>
+            )}
           </div>
-          <Box className="w-full max-w-md mt-6">
+          <Box className="w-full max-w-xl mt-6">
             <Stepper activeStep={step} alternativeLabel>
               {steps.map((label) => (
                 <Step key={label}>
@@ -163,7 +172,13 @@ export default function Steps(): ReactElement {
               ))}
             </Stepper>
           </Box>
-          <DisplayPluginData step={step} pluginData={pluginData} />
+          <DisplayPluginData
+            step={step}
+            pluginData={pluginData}
+            transcript={transcript}
+            setTranscript={setTranscript}
+            setStep={setStep}
+          />
         </>
       ) : (
         <div className="flex flex-col justify-center items-center gap-2">
@@ -188,11 +203,16 @@ export default function Steps(): ReactElement {
 function DisplayPluginData({
   step,
   pluginData,
+  transcript,
+  setTranscript,
+  setStep,
 }: {
   step: number;
   pluginData: any;
+  transcript: any;
+  setTranscript: any;
+  setStep: any;
 }): ReactElement {
-  const [transcript, setTranscript] = useState<any>(null);
   const [tab, setTab] = useState<'sent' | 'recv'>('sent');
 
   async function handleVerify() {
@@ -209,6 +229,7 @@ function DisplayPluginData({
         recv: transcript.recv(),
       };
       setTranscript(verifiedData);
+      setStep(4);
     } catch (error) {
       console.log(error);
     }
@@ -274,6 +295,47 @@ function DisplayPluginData({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ClaimPoap({ screen_name }: { screen_name: string }): ReactElement {
+  const [screenName, setScreenName] = useState('');
+  const [poapLink, setPoapLink] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleClaimPoap = async () => {
+      try {
+        if (!screen_name) return;
+        const response = await fetch('/poap-claim', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ screenName: screen_name }),
+        });
+        if (response.status === 200) {
+          const data = await response.json();
+          setPoapLink(data.poapLink);
+        } else {
+          setError(await response.text());
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    handleClaimPoap();
+  }, [screen_name]);
+
+  return (
+    <div>
+      {poapLink !== '' && (
+        <a className="button" href={poapLink} target="_blank">
+          Claim POAP!
+        </a>
+      )}
     </div>
   );
 }
