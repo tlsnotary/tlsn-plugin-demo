@@ -99,13 +99,12 @@ export default function Steps(): ReactElement {
       );
       setPluginID(plugin);
       setStep(2);
-    } catch (error : any) {
+    } catch (error: any) {
       console.log(error.message);
       if (error.message === 'Plugin already exist.') {
         try {
           await handleGetPlugins();
-        }
-        catch (error) {
+        } catch (error) {
           console.log(error);
         }
       }
@@ -159,10 +158,7 @@ export default function Steps(): ReactElement {
             )}
             {step === 1 && (
               <div className="flex flex-col gap-2">
-                <button
-                  onClick={handlePluginInstall}
-                  className="button"
-                >
+                <button onClick={handlePluginInstall} className="button">
                   Install Plugin
                 </button>
               </div>
@@ -198,6 +194,27 @@ export default function Steps(): ReactElement {
         </>
       ) : (
         <div className="flex flex-col justify-center items-center gap-2">
+          <div className="flex flex-col justify center items-center gap-2 pb-4">
+            <h1 className="text-base font-light">
+              Welcome to the TLSNotary Plugin Demo!
+            </h1>
+            <p className="text-base font-light">
+              This demo shows how TLSNotary can be used to verify private user
+              data in a webapp.
+            </p>
+            <p className="text-base font-light">
+              In this demo you'll prove that you own a Twitter/X account to the
+              webserver.
+            </p>
+            <p className="text-base font-light">
+              The website will verify your attestation and give a POAP in return
+              (<span className="font-semibold">while supplies last</span>)
+            </p>
+          </div>
+          <p className="font-bold">Please install the extension to proceed </p>
+          <p className="font-bold">
+            You will need to refresh your browser after installing the extension
+          </p>
           <a
             href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
             target="_blank"
@@ -205,11 +222,6 @@ export default function Steps(): ReactElement {
           >
             Install TLSN Extension
           </a>
-          <p className="font-bold">Please install the extension to proceed. </p>
-          <p className="font-bold">
-            You will need to refresh your browser after installing the
-            extension.
-          </p>
         </div>
       )}
     </div>

@@ -16,7 +16,7 @@ export default function Header(): ReactElement {
           <Icon fa="fa-solid fa-globe" />
         </a>
         <a
-          href=""
+          href="https://github.com/tlsnotary"
           className="flex flex-row items-center justify-center button !bg-transparent"
           target="_blank"
         >
