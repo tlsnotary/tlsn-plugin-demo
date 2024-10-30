@@ -2,3 +2,6 @@
 **/.DS_Store
 .idea
 build
+.env
+poaps.txt
+assignments.json
