@@ -13,6 +13,7 @@ const steps = [
   'Connect Extension',
   'Install Plugin',
   'Run Plugin',
+  'Verify Attestation',
   '🎉 Claim POAP 🎉',
 ];
 
@@ -23,7 +24,6 @@ export default function Steps(): ReactElement {
   const [client, setClient] = useState<any>(null);
   const [pluginData, setPluginData] = useState<PresentationJSON | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [pluginInstalled, setPluginInstalled] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<any>(null);
   const [screenName, setScreenName] = useState<string>('');
   const [exploding, setExploding] = useState<boolean>(false);
@@ -33,20 +33,19 @@ export default function Steps(): ReactElement {
       //@ts-ignore
       if (typeof window.tlsn !== 'undefined') {
         setExtensionInstalled(true);
-        setTimeout(async () => {
-          // temporary fix until extension events added
-          // @ts-ignore
-          setClient(await window.tlsn.connect());
-          setStep(1);
-        }, 200);
       } else {
         return;
       }
     };
 
-    window.onload = () => {
-      checkExtension();
-    };
+    window.addEventListener('tlsn_loaded', async () => {
+      console.log('TLSN loaded');
+      //@ts-ignore
+      setClient(await window.tlsn.connect());
+      setStep(1);
+    });
+
+    window.onload = checkExtension;
 
     (async () => {
       const { default: init } = await import('tlsn-js');
@@ -55,6 +54,7 @@ export default function Steps(): ReactElement {
 
     return () => {
       window.onload = null;
+      window.removeEventListener('tlsn_loaded', () => {});
     };
   }, []);
 
@@ -85,8 +85,6 @@ export default function Steps(): ReactElement {
       if (plugins.length > 0) {
         setPluginID(plugins[0].hash);
         setStep(2);
-      } else {
-        setPluginInstalled(true);
       }
     } catch (error) {
       console.log(error);
@@ -101,7 +99,16 @@ export default function Steps(): ReactElement {
       );
       setPluginID(plugin);
       setStep(2);
-    } catch (error) {
+    } catch (error : any) {
+      console.log(error.message);
+      if (error.message === 'Plugin already exist.') {
+        try {
+          await handleGetPlugins();
+        }
+        catch (error) {
+          console.log(error);
+        }
+      }
       console.log(error);
     }
   }
@@ -135,7 +142,7 @@ export default function Steps(): ReactElement {
               )}
             ></div>
           </div>
-          <Box className="w-full max-w-xl mt-6 pb-4">
+          <Box className="w-full max-w-3xl mt-6 pb-4">
             <Stepper activeStep={step} alternativeLabel>
               {steps.map((label) => (
                 <Step key={label}>
@@ -152,12 +159,8 @@ export default function Steps(): ReactElement {
             )}
             {step === 1 && (
               <div className="flex flex-col gap-2">
-                <button className="button" onClick={handleGetPlugins}>
-                  Check Plugins
-                </button>
                 <button
                   onClick={handlePluginInstall}
-                  disabled={!pluginInstalled}
                   className="button"
                 >
                   Install Plugin
@@ -174,9 +177,13 @@ export default function Steps(): ReactElement {
                 </span>
               </div>
             )}
-            {step === 4 && (
+            {step === 5 && (
               <>
-                <ClaimPoap screen_name={screenName} exploding={exploding} />
+                <ClaimPoap
+                  screen_name={screenName}
+                  exploding={exploding}
+                  setStep={setStep}
+                />
               </>
             )}
           </div>
@@ -238,7 +245,7 @@ function DisplayPluginData({
         recv: transcript.recv(),
       };
       setTranscript(verifiedData);
-      setStep(4);
+      setStep(5);
     } catch (error) {
       console.log(error);
     }
@@ -311,9 +318,11 @@ function DisplayPluginData({
 function ClaimPoap({
   screen_name,
   exploding,
+  setStep,
 }: {
   screen_name: string;
   exploding: boolean;
+  setStep: any;
 }): ReactElement {
   const [screenName, setScreenName] = useState('');
   const [poapLink, setPoapLink] = useState<string>('');
