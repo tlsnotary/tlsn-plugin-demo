@@ -37,13 +37,13 @@ export default function Steps(): ReactElement {
         return;
       }
     };
-
-    window.addEventListener('tlsn_loaded', async () => {
-      console.log('TLSN loaded');
+    const handleTLSNLoaded = async () => {
       //@ts-ignore
       setClient(await window.tlsn.connect());
       setStep(1);
-    });
+    };
+
+    window.addEventListener('tlsn_loaded', handleTLSNLoaded);
 
     window.onload = checkExtension;
 
@@ -54,7 +54,7 @@ export default function Steps(): ReactElement {
 
     return () => {
       window.onload = null;
-      window.removeEventListener('tlsn_loaded', () => {});
+      window.removeEventListener('tlsn_loaded', handleTLSNLoaded);
     };
   }, []);
 
