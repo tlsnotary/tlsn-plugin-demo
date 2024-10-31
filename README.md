@@ -1,4 +1,4 @@
-# TLSNotary Plugin Demo
+# [TLSNotary Plugin Demo](https://github.com/tlsnotary/tlsn-plugin-demo#tlsn-plugin-demo)
 
 Welcome to the **TLSNotary Plugin Demo**! This demo showcases how TLSNotary can be used to verify private user data in web applications.
 
@@ -30,5 +30,3 @@ This demo works by leveraging the [Provider API]((https://github.com/tlsnotary/t
 3. Insert a `poaps.txt` of POAP mint links and an empty `assignments.json` in `server/util`
 4. Run `npm run dev`
 5. Enjoy the demo
-
-

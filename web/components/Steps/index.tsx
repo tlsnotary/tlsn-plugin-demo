@@ -165,12 +165,39 @@ export default function Steps(): ReactElement {
             )}
             {step === 2 && (
               <div className="flex flex-col items-center justify-center gap-2">
+                <ul className="flex flex-col items-center justify-center gap-1">
+                  <li className="text-base font-light">
+                    This will open a new tab to Twitter/X and the sidebar for
+                    the extension
+                  </li>
+                  <li className="text-base font-light">
+                    Click through the steps in the sidebar
+                  </li>
+                  <li className="text-base font-light">
+                    Don't close the sidebar until notarization is finished
+                  </li>
+                  <li className="text-base font-light">
+                    If successful the attestation field will populate with the
+                    attestation from the notary
+                  </li>
+                </ul>
                 <Button onClick={handleRunPlugin} loading={loading}>
                   Run Plugin
                 </Button>
-                <span className="font-bold">
-                  Please keep the sidebar open during the notarization process
-                </span>
+              </div>
+            )}
+            {step === 3 && (
+              <div>
+                <ul className="flex flex-col justify-center items-center gap-1">
+                  <li className="text-base font-light">
+                    Click the "Verify" button below to verify the attestation
+                  </li>
+                  <li className="text-base font-light">
+                    If successful the verified data will show in the
+                    Presentation field and provide you with a link to claim your
+                    POAP
+                  </li>
+                </ul>
               </div>
             )}
             {step === 5 && (

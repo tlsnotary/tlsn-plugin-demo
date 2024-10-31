@@ -8,7 +8,11 @@ export default function Header(): ReactElement {
     <header className="flex flex-row items-center justify-between h-16 px-4 bg-slate-200">
       <img className="w-8 h-8" src={Logo} />
       <div className="flex flex-row items-center">
-        <a href="" target="_blank" className="button !bg-transparent">
+        <a
+          href="https://github.com/tlsnotary/tlsn-plugin-demo#tlsn-plugin-demo"
+          target="_blank"
+          className="button !bg-transparent"
+        >
           About
         </a>
         <a
