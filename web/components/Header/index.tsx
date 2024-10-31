@@ -9,6 +9,13 @@ export default function Header(): ReactElement {
       <img className="w-8 h-8" src={Logo} />
       <div className="flex flex-row items-center">
         <a
+          href="https://github.com/tlsnotary/tlsn-plugin-demo#tlsn-plugin-demo"
+          target="_blank"
+          className="button !bg-transparent"
+        >
+          About
+        </a>
+        <a
           href="https://tlsnotary.org/"
           className="flex flex-row items-center justify-center button !bg-transparent"
           target="_blank"
@@ -16,7 +23,7 @@ export default function Header(): ReactElement {
           <Icon fa="fa-solid fa-globe" />
         </a>
         <a
-          href=""
+          href="https://github.com/tlsnotary"
           className="flex flex-row items-center justify-center button !bg-transparent"
           target="_blank"
         >

@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
-import './index.scss';
+import { Routes, Route } from 'react-router-dom';
 import Header from '../../components/Header';
 import Body from '../../components/Body';
-import { Routes, Route } from 'react-router-dom';
+import './index.scss';
 
 export default function App(): ReactElement {
   return (

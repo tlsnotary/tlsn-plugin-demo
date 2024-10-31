@@ -13,6 +13,7 @@ const steps = [
   'Connect Extension',
   'Install Plugin',
   'Run Plugin',
+  'Verify Attestation',
   '🎉 Claim POAP 🎉',
 ];
 
@@ -23,7 +24,6 @@ export default function Steps(): ReactElement {
   const [client, setClient] = useState<any>(null);
   const [pluginData, setPluginData] = useState<PresentationJSON | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [pluginInstalled, setPluginInstalled] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<any>(null);
   const [screenName, setScreenName] = useState<string>('');
   const [exploding, setExploding] = useState<boolean>(false);
@@ -33,20 +33,19 @@ export default function Steps(): ReactElement {
       //@ts-ignore
       if (typeof window.tlsn !== 'undefined') {
         setExtensionInstalled(true);
-        setTimeout(async () => {
-          // temporary fix until extension events added
-          // @ts-ignore
-          setClient(await window.tlsn.connect());
-          setStep(1);
-        }, 200);
       } else {
         return;
       }
     };
-
-    window.onload = () => {
-      checkExtension();
+    const handleTLSNLoaded = async () => {
+      //@ts-ignore
+      setClient(await window.tlsn.connect());
+      setStep(1);
     };
+
+    window.addEventListener('tlsn_loaded', handleTLSNLoaded);
+
+    window.onload = checkExtension;
 
     (async () => {
       const { default: init } = await import('tlsn-js');
@@ -55,6 +54,7 @@ export default function Steps(): ReactElement {
 
     return () => {
       window.onload = null;
+      window.removeEventListener('tlsn_loaded', handleTLSNLoaded);
     };
   }, []);
 
@@ -85,8 +85,6 @@ export default function Steps(): ReactElement {
       if (plugins.length > 0) {
         setPluginID(plugins[0].hash);
         setStep(2);
-      } else {
-        setPluginInstalled(true);
       }
     } catch (error) {
       console.log(error);
@@ -101,7 +99,15 @@ export default function Steps(): ReactElement {
       );
       setPluginID(plugin);
       setStep(2);
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error.message);
+      if (error.message === 'Plugin already exist.') {
+        try {
+          await handleGetPlugins();
+        } catch (error) {
+          console.log(error);
+        }
+      }
       console.log(error);
     }
   }
@@ -135,7 +141,7 @@ export default function Steps(): ReactElement {
               )}
             ></div>
           </div>
-          <Box className="w-full max-w-xl mt-6 pb-4">
+          <Box className="w-full max-w-3xl mt-6 pb-4">
             <Stepper activeStep={step} alternativeLabel>
               {steps.map((label) => (
                 <Step key={label}>
@@ -152,31 +158,55 @@ export default function Steps(): ReactElement {
             )}
             {step === 1 && (
               <div className="flex flex-col gap-2">
-                <button className="button" onClick={handleGetPlugins}>
-                  Check Plugins
-                </button>
-                <button
-                  onClick={handlePluginInstall}
-                  disabled={!pluginInstalled}
-                  className="button"
-                >
+                <button onClick={handlePluginInstall} className="button">
                   Install Plugin
                 </button>
               </div>
             )}
             {step === 2 && (
               <div className="flex flex-col items-center justify-center gap-2">
+                <ul className="flex flex-col items-center justify-center gap-1">
+                  <li className="text-base font-light">
+                    This will open a new tab to Twitter/X and the sidebar for
+                    the extension
+                  </li>
+                  <li className="text-base font-light">
+                    Click through the steps in the sidebar
+                  </li>
+                  <li className="text-base font-light">
+                    Don't close the sidebar until notarization is finished
+                  </li>
+                  <li className="text-base font-light">
+                    If successful the attestation field will populate with the
+                    attestation from the notary
+                  </li>
+                </ul>
                 <Button onClick={handleRunPlugin} loading={loading}>
                   Run Plugin
                 </Button>
-                <span className="font-bold">
-                  Please keep the sidebar open during the notarization process
-                </span>
               </div>
             )}
-            {step === 4 && (
+            {step === 3 && (
+              <div>
+                <ul className="flex flex-col justify-center items-center gap-1">
+                  <li className="text-base font-light">
+                    Click the "Verify" button below to verify the attestation
+                  </li>
+                  <li className="text-base font-light">
+                    If successful the verified data will show in the
+                    Presentation field and provide you with a link to claim your
+                    POAP
+                  </li>
+                </ul>
+              </div>
+            )}
+            {step === 5 && (
               <>
-                <ClaimPoap screen_name={screenName} exploding={exploding} />
+                <ClaimPoap
+                  screen_name={screenName}
+                  exploding={exploding}
+                  setStep={setStep}
+                />
               </>
             )}
           </div>
@@ -191,6 +221,27 @@ export default function Steps(): ReactElement {
         </>
       ) : (
         <div className="flex flex-col justify-center items-center gap-2">
+          <div className="flex flex-col justify center items-center gap-2 pb-4">
+            <h1 className="text-base font-light">
+              Welcome to the TLSNotary Plugin Demo!
+            </h1>
+            <p className="text-base font-light">
+              This demo shows how TLSNotary can be used to verify private user
+              data in a webapp.
+            </p>
+            <p className="text-base font-light">
+              In this demo you'll prove that you own a Twitter/X account to the
+              webserver.
+            </p>
+            <p className="text-base font-light">
+              The website will verify your attestation and give a POAP in return
+              (<span className="font-semibold">while supplies last</span>)
+            </p>
+          </div>
+          <p className="font-bold">Please install the extension to proceed </p>
+          <p className="font-bold">
+            You will need to refresh your browser after installing the extension
+          </p>
           <a
             href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
             target="_blank"
@@ -198,11 +249,6 @@ export default function Steps(): ReactElement {
           >
             Install TLSN Extension
           </a>
-          <p className="font-bold">Please install the extension to proceed. </p>
-          <p className="font-bold">
-            You will need to refresh your browser after installing the
-            extension.
-          </p>
         </div>
       )}
     </div>
@@ -238,7 +284,7 @@ function DisplayPluginData({
         recv: transcript.recv(),
       };
       setTranscript(verifiedData);
-      setStep(4);
+      setStep(5);
     } catch (error) {
       console.log(error);
     }
@@ -311,9 +357,11 @@ function DisplayPluginData({
 function ClaimPoap({
   screen_name,
   exploding,
+  setStep,
 }: {
   screen_name: string;
   exploding: boolean;
+  setStep: any;
 }): ReactElement {
   const [screenName, setScreenName] = useState('');
   const [poapLink, setPoapLink] = useState<string>('');
