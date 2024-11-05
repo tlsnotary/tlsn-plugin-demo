@@ -75,6 +75,10 @@ const options = {
           },
         ],
       },
+      {
+        test: /\.node$/,
+        use: 'node-loader',
+      },
     ],
   },
   plugins: [

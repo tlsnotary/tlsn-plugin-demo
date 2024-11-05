@@ -272,23 +272,25 @@ function DisplayPluginData({
 
   async function handleVerify() {
     try {
-      const { Presentation, Transcript } = await import('tlsn-js');
-      const presentation = await new Presentation(pluginData.data);
-      const proof = await presentation.verify();
-      const transcript = new Transcript({
-        sent: proof.transcript.sent,
-        recv: proof.transcript.recv,
+      const response = await fetch('/verify-attestation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ attestation: pluginData }),
       });
-      const verifiedData = {
-        sent: transcript.sent(),
-        recv: transcript.recv(),
-      };
-      setTranscript(verifiedData);
-      setStep(5);
+      if (response.status === 200) {
+        const data = await response.json();
+        setTranscript(data.presentationObj);
+        setStep(5);
+      } else {
+        console.log(await response.text());
+      }
     } catch (error) {
       console.log(error);
     }
   }
+
 
   const formatDataPreview = (data: PresentationJSON) => {
     if (!data) return '';
@@ -357,13 +359,11 @@ function DisplayPluginData({
 function ClaimPoap({
   screen_name,
   exploding,
-  setStep,
 }: {
   screen_name: string;
   exploding: boolean;
   setStep: any;
 }): ReactElement {
-  const [screenName, setScreenName] = useState('');
   const [poapLink, setPoapLink] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 

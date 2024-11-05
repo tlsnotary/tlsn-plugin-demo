@@ -6,6 +6,11 @@ import App from '../web/pages/App';
 import configureAppStore, { AppRootState } from '../web/store';
 import { Provider } from 'react-redux';
 import { getPoapLink } from './util/index';
+import { Mutex } from 'async-mutex'
+//@ts-ignore
+import { verify } from '../rs/0.1.0-alpha.7/index.node';
+import { convertNotaryWsToHttp, fetchPublicKeyFromNotary } from './util/index';
+
 
 const app = express();
 const port = 3030;
@@ -32,6 +37,9 @@ app.use((req, res, next) => {
 
 app.use(express.static('build/ui'));
 app.use(express.json());
+const mutex = new Mutex();
+
+
 
 app.get('*', (req, res) => {
   const storeConfig: AppRootState = {
@@ -81,19 +89,39 @@ app.get('*', (req, res) => {
     `);
 });
 
-app.post('/poap-claim', (req, res) => {
+app.post('/poap-claim', async (req, res) => {
   const { screenName } = req.body;
+
   if (!screenName) {
     return res.status(400).send('Missing screen_name');
   }
-  const poapLink = getPoapLink(screenName);
-
-  if (poapLink) {
-    res.json({ poapLink });
-  } else {
-    res.status(404).send('No POAP links available');
-  }
+  mutex.runExclusive(() => {
+    return getPoapLink(screenName);
+  }).then((poapLink) => {
+    if (poapLink) {
+      res.json({ poapLink });
+    } else {
+      res.status(404).send('No POAP links available');
+    }
+  })
 });
+
+app.post('/verify-attestation', async (req, res) => {
+  const { attestation } = req.body;
+  if (!attestation) {
+    return res.status(400).send("Missing attestation");
+  }
+  const notaryUrl = convertNotaryWsToHttp(attestation.meta.notaryUrl);
+  const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
+  const presentation = verify(attestation.data, notaryPem);
+
+  const presentationObj = {
+    sent: presentation.sent,
+    recv: presentation.recv
+  }
+
+  res.json({ presentationObj });
+})
 
 app.listen(port, () => {
   console.log(`Plugin demo listening on port ${port}`);
