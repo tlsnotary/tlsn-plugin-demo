@@ -95,15 +95,13 @@ app.post('/poap-claim', async (req, res) => {
   if (!screenName) {
     return res.status(400).send('Missing screen_name');
   }
-  mutex.runExclusive(() => {
-    return getPoapLink(screenName);
-  }).then((poapLink) => {
-    if (poapLink) {
-      res.json({ poapLink });
-    } else {
-      res.status(404).send('No POAP links available');
+  await mutex.runExclusive(async () => {
+    const poapLink = getPoapLink(screenName);
+    if (!poapLink) {
+      return res.status(500).send('No more POAP links available');
     }
-  })
+    res.json({ poapLink });
+  });
 });
 
 app.post('/verify-attestation', async (req, res) => {
