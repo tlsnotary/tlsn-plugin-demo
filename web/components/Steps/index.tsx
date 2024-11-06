@@ -206,13 +206,17 @@ export default function Steps(): ReactElement {
               </>
             )}
           </div>
-          <DisplayPluginData
-            step={step}
-            pluginData={pluginData}
-            transcript={transcript}
-            setTranscript={setTranscript}
-            setStep={setStep}
-          />
+          {pluginData ? (
+            <DisplayPluginData
+              step={step}
+              pluginData={pluginData}
+              transcript={transcript}
+              setTranscript={setTranscript}
+              setStep={setStep}
+            />
+          ) : (
+            <></>
+          )}
         </>
       ) : (
         <InstallExtensionPrompt />
@@ -375,7 +379,7 @@ function InstallExtensionPrompt() {
           webserver.
         </p>
         <p className="text-base font-light">
-          The website will verify your attestation and give a POAP in return (
+          The webserver will verify your attestation and give a POAP in return (
           <span className="font-semibold">while supplies last</span>)
         </p>
       </div>
