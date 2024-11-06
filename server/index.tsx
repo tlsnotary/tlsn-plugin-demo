@@ -6,11 +6,10 @@ import App from '../web/pages/App';
 import configureAppStore, { AppRootState } from '../web/store';
 import { Provider } from 'react-redux';
 import { getPoapLink } from './util/index';
-import { Mutex } from 'async-mutex'
+import { Mutex } from 'async-mutex';
 //@ts-ignore
 import { verify } from '../rs/0.1.0-alpha.7/index.node';
 import { convertNotaryWsToHttp, fetchPublicKeyFromNotary } from './util/index';
-
 
 const app = express();
 const port = 3030;
@@ -38,8 +37,6 @@ app.use((req, res, next) => {
 app.use(express.static('build/ui'));
 app.use(express.json());
 const mutex = new Mutex();
-
-
 
 app.get('*', (req, res) => {
   const storeConfig: AppRootState = {
@@ -107,7 +104,7 @@ app.post('/poap-claim', async (req, res) => {
 app.post('/verify-attestation', async (req, res) => {
   const { attestation } = req.body;
   if (!attestation) {
-    return res.status(400).send("Missing attestation");
+    return res.status(400).send('Missing attestation');
   }
   const notaryUrl = convertNotaryWsToHttp(attestation.meta.notaryUrl);
   const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
@@ -115,11 +112,11 @@ app.post('/verify-attestation', async (req, res) => {
 
   const presentationObj = {
     sent: presentation.sent,
-    recv: presentation.recv
-  }
+    recv: presentation.recv,
+  };
 
   res.json({ presentationObj });
-})
+});
 
 app.listen(port, () => {
   console.log(`Plugin demo listening on port ${port}`);

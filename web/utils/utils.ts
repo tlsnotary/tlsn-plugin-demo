@@ -1,6 +1,5 @@
 import type { PresentationJSON } from 'tlsn-js/build/types';
 
-
 export const formatDataPreview = (data: PresentationJSON) => {
   if (!data) return '';
   return Object.entries(data)

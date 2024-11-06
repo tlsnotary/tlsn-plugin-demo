@@ -8,6 +8,7 @@ import classNames from 'classnames';
 import type { PresentationJSON } from 'tlsn-js/build/types';
 import Button from '../Button';
 import ConfettiExplosion, { ConfettiProps } from 'react-confetti-explosion';
+import { formatDataPreview } from '../../utils/utils';
 
 const steps = [
   'Connect Extension',
@@ -205,7 +206,6 @@ export default function Steps(): ReactElement {
               </>
             )}
           </div>
-
           <DisplayPluginData
             step={step}
             pluginData={pluginData}
@@ -256,25 +256,6 @@ function DisplayPluginData({
       console.log(error);
     }
   }
-
-
-  const formatDataPreview = (data: PresentationJSON) => {
-    if (!data) return '';
-    return Object.entries(data)
-      .map(([key, value]) => {
-        if (typeof value === 'object' && value !== null) {
-          return `${key}: ${JSON.stringify(value, null, 2)}`;
-        } else if (key === 'data') {
-          const maxLength = 160;
-          const previewData = value.toString().substring(0, maxLength);
-          const formattedData = previewData.match(/.{1,20}/g)?.join('\n');
-          return `${key}: ${formattedData}... ${value.length} more`;
-        } else {
-          return `${key}: ${value}`;
-        }
-      })
-      .join('\n');
-  };
 
   return (
     <div className="flex justify-center items-center space-x-4 mt-8">
@@ -378,7 +359,7 @@ function ClaimPoap({
   );
 }
 
-function InstallExtensionPrompt () {
+function InstallExtensionPrompt() {
   return (
     <div className="flex flex-col justify-center items-center gap-2">
       <div className="flex flex-col justify center items-center gap-2 pb-4">
@@ -386,16 +367,16 @@ function InstallExtensionPrompt () {
           Welcome to the TLSNotary Plugin Demo!
         </h1>
         <p className="text-base font-light">
-          This demo shows how TLSNotary can be used to verify private user
-          data in a webapp.
+          This demo shows how TLSNotary can be used to verify private user data
+          in a webapp.
         </p>
         <p className="text-base font-light">
           In this demo you'll prove that you own a Twitter/X account to the
           webserver.
         </p>
         <p className="text-base font-light">
-          The website will verify your attestation and give a POAP in return
-          (<span className="font-semibold">while supplies last</span>)
+          The website will verify your attestation and give a POAP in return (
+          <span className="font-semibold">while supplies last</span>)
         </p>
       </div>
       <p className="font-bold">Please install the extension to proceed </p>
