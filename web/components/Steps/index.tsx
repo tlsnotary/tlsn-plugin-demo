@@ -47,11 +47,6 @@ export default function Steps(): ReactElement {
 
     window.onload = checkExtension;
 
-    (async () => {
-      const { default: init } = await import('tlsn-js');
-      await init();
-    })();
-
     return () => {
       window.onload = null;
       window.removeEventListener('tlsn_loaded', handleTLSNLoaded);
@@ -220,36 +215,7 @@ export default function Steps(): ReactElement {
           />
         </>
       ) : (
-        <div className="flex flex-col justify-center items-center gap-2">
-          <div className="flex flex-col justify center items-center gap-2 pb-4">
-            <h1 className="text-base font-light">
-              Welcome to the TLSNotary Plugin Demo!
-            </h1>
-            <p className="text-base font-light">
-              This demo shows how TLSNotary can be used to verify private user
-              data in a webapp.
-            </p>
-            <p className="text-base font-light">
-              In this demo you'll prove that you own a Twitter/X account to the
-              webserver.
-            </p>
-            <p className="text-base font-light">
-              The website will verify your attestation and give a POAP in return
-              (<span className="font-semibold">while supplies last</span>)
-            </p>
-          </div>
-          <p className="font-bold">Please install the extension to proceed </p>
-          <p className="font-bold">
-            You will need to refresh your browser after installing the extension
-          </p>
-          <a
-            href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
-            target="_blank"
-            className="button"
-          >
-            Install TLSN Extension
-          </a>
-        </div>
+        <InstallExtensionPrompt />
       )}
     </div>
   );
@@ -408,6 +374,41 @@ function ClaimPoap({
         </a>
       )}
       {exploding && <ConfettiExplosion {...mediumProps} />}
+    </div>
+  );
+}
+
+function InstallExtensionPrompt () {
+  return (
+    <div className="flex flex-col justify-center items-center gap-2">
+      <div className="flex flex-col justify center items-center gap-2 pb-4">
+        <h1 className="text-base font-light">
+          Welcome to the TLSNotary Plugin Demo!
+        </h1>
+        <p className="text-base font-light">
+          This demo shows how TLSNotary can be used to verify private user
+          data in a webapp.
+        </p>
+        <p className="text-base font-light">
+          In this demo you'll prove that you own a Twitter/X account to the
+          webserver.
+        </p>
+        <p className="text-base font-light">
+          The website will verify your attestation and give a POAP in return
+          (<span className="font-semibold">while supplies last</span>)
+        </p>
+      </div>
+      <p className="font-bold">Please install the extension to proceed </p>
+      <p className="font-bold">
+        You will need to refresh your browser after installing the extension
+      </p>
+      <a
+        href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
+        target="_blank"
+        className="button"
+      >
+        Install TLSN Extension
+      </a>
     </div>
   );
 }
