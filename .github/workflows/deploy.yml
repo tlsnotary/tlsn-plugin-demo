@@ -1,0 +1,36 @@
+name: Deploy
+on:
+  push:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:  
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:      
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::490752553772:role/tlsn-plugin-demo-ecs-deploy-slc
+          role-duration-seconds: 1800
+          aws-region: eu-central-1
+
+      - name: Build and Push images to ECR
+        run: |
+          .github/scripts/build.sh
+
+      - name: Trigger Deployment
+        run: |
+          .github/scripts/deploy.sh
