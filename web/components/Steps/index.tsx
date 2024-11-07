@@ -8,6 +8,7 @@ import classNames from 'classnames';
 import type { PresentationJSON } from 'tlsn-js/build/types';
 import Button from '../Button';
 import ConfettiExplosion, { ConfettiProps } from 'react-confetti-explosion';
+import { formatDataPreview } from '../../utils/utils';
 
 const steps = [
   'Connect Extension',
@@ -46,11 +47,6 @@ export default function Steps(): ReactElement {
     window.addEventListener('tlsn_loaded', handleTLSNLoaded);
 
     window.onload = checkExtension;
-
-    (async () => {
-      const { default: init } = await import('tlsn-js');
-      await init();
-    })();
 
     return () => {
       window.onload = null;
@@ -210,46 +206,20 @@ export default function Steps(): ReactElement {
               </>
             )}
           </div>
-
-          <DisplayPluginData
-            step={step}
-            pluginData={pluginData}
-            transcript={transcript}
-            setTranscript={setTranscript}
-            setStep={setStep}
-          />
+          {pluginData ? (
+            <DisplayPluginData
+              step={step}
+              pluginData={pluginData}
+              transcript={transcript}
+              setTranscript={setTranscript}
+              setStep={setStep}
+            />
+          ) : (
+            <></>
+          )}
         </>
       ) : (
-        <div className="flex flex-col justify-center items-center gap-2">
-          <div className="flex flex-col justify center items-center gap-2 pb-4">
-            <h1 className="text-base font-light">
-              Welcome to the TLSNotary Plugin Demo!
-            </h1>
-            <p className="text-base font-light">
-              This demo shows how TLSNotary can be used to verify private user
-              data in a webapp.
-            </p>
-            <p className="text-base font-light">
-              In this demo you'll prove that you own a Twitter/X account to the
-              webserver.
-            </p>
-            <p className="text-base font-light">
-              The website will verify your attestation and give a POAP in return
-              (<span className="font-semibold">while supplies last</span>)
-            </p>
-          </div>
-          <p className="font-bold">Please install the extension to proceed </p>
-          <p className="font-bold">
-            You will need to refresh your browser after installing the extension
-          </p>
-          <a
-            href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
-            target="_blank"
-            className="button"
-          >
-            Install TLSN Extension
-          </a>
-        </div>
+        <InstallExtensionPrompt />
       )}
     </div>
   );
@@ -272,41 +242,24 @@ function DisplayPluginData({
 
   async function handleVerify() {
     try {
-      const { Presentation, Transcript } = await import('tlsn-js');
-      const presentation = await new Presentation(pluginData.data);
-      const proof = await presentation.verify();
-      const transcript = new Transcript({
-        sent: proof.transcript.sent,
-        recv: proof.transcript.recv,
+      const response = await fetch('/verify-attestation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ attestation: pluginData }),
       });
-      const verifiedData = {
-        sent: transcript.sent(),
-        recv: transcript.recv(),
-      };
-      setTranscript(verifiedData);
-      setStep(5);
+      if (response.status === 200) {
+        const data = await response.json();
+        setTranscript(data.presentationObj);
+        setStep(5);
+      } else {
+        console.log(await response.text());
+      }
     } catch (error) {
       console.log(error);
     }
   }
-
-  const formatDataPreview = (data: PresentationJSON) => {
-    if (!data) return '';
-    return Object.entries(data)
-      .map(([key, value]) => {
-        if (typeof value === 'object' && value !== null) {
-          return `${key}: ${JSON.stringify(value, null, 2)}`;
-        } else if (key === 'data') {
-          const maxLength = 160;
-          const previewData = value.toString().substring(0, maxLength);
-          const formattedData = previewData.match(/.{1,20}/g)?.join('\n');
-          return `${key}: ${formattedData}... ${value.length} more`;
-        } else {
-          return `${key}: ${value}`;
-        }
-      })
-      .join('\n');
-  };
 
   return (
     <div className="flex justify-center items-center space-x-4 mt-8">
@@ -357,13 +310,11 @@ function DisplayPluginData({
 function ClaimPoap({
   screen_name,
   exploding,
-  setStep,
 }: {
   screen_name: string;
   exploding: boolean;
   setStep: any;
 }): ReactElement {
-  const [screenName, setScreenName] = useState('');
   const [poapLink, setPoapLink] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
@@ -408,6 +359,41 @@ function ClaimPoap({
         </a>
       )}
       {exploding && <ConfettiExplosion {...mediumProps} />}
+    </div>
+  );
+}
+
+function InstallExtensionPrompt() {
+  return (
+    <div className="flex flex-col justify-center items-center gap-2">
+      <div className="flex flex-col justify center items-center gap-2 pb-4">
+        <h1 className="text-base font-light">
+          Welcome to the TLSNotary Plugin Demo!
+        </h1>
+        <p className="text-base font-light">
+          This demo shows how TLSNotary can be used to verify private user data
+          in a webapp.
+        </p>
+        <p className="text-base font-light">
+          In this demo you'll prove that you own a Twitter/X account to the
+          webserver.
+        </p>
+        <p className="text-base font-light">
+          The webserver will verify your attestation and give a POAP in return (
+          <span className="font-semibold">while supplies last</span>)
+        </p>
+      </div>
+      <p className="font-bold">Please install the extension to proceed </p>
+      <p className="font-bold">
+        You will need to refresh your browser after installing the extension
+      </p>
+      <a
+        href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
+        target="_blank"
+        className="button"
+      >
+        Install TLSN Extension
+      </a>
     </div>
   );
 }
