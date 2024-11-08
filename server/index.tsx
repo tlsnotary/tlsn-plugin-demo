@@ -140,7 +140,8 @@ app.post('/verify-attestation', async (req, res) => {
   try {
     const notaryUrl = convertNotaryWsToHttp(attestation.meta.notaryUrl);
     const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
-    const presentation = verify(attestation.data, notaryPem);
+    console.log(notaryPem)
+    const presentation = await verify(attestation.data, notaryPem);
 
     const presentationObj = {
       sent: presentation.sent,
