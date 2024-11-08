@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import { localPem } from '../../web/utils/constants';
 
 const poapLinksPath = path.join(__dirname, 'util', 'poaps.txt');
 const assignmentsFilePath = path.join(__dirname, 'util', 'assignments.json');
@@ -49,8 +50,16 @@ export function convertNotaryWsToHttp(notaryWs: string) {
 }
 
 export async function fetchPublicKeyFromNotary(notaryUrl: string) {
-  const res = await fetch(notaryUrl + '/info');
-  const json: any = await res.json();
-  if (!json.publicKey) throw new Error('invalid response');
-  return json.publicKey;
+  try {
+    const url = new URL(notaryUrl);
+    const { hostname }  = url;
+    if (hostname === '127.0.0.1' || hostname === 'localhost') return localPem;
+    const res = await fetch(notaryUrl + '/info');
+    const json: any = await res.json();
+    if (!json.publicKey) throw new Error('invalid response');
+    return json.publicKey;
+  } catch (e) {
+    console.error('Failed to fetch public key from notary', e);
+    return null;
+  }
 }

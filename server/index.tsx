@@ -10,6 +10,8 @@ import { Mutex } from 'async-mutex';
 //@ts-ignore
 import { verify } from '../rs/0.1.0-alpha.7/index.node';
 import { convertNotaryWsToHttp, fetchPublicKeyFromNotary } from './util/index';
+import { localPem } from '../web/utils/constants';
+
 
 const app = express();
 const port = 3030;
@@ -39,6 +41,9 @@ app.use(express.json());
 const mutex = new Mutex();
 
 app.get('*', (req, res) => {
+  try {
+
+
   const storeConfig: AppRootState = {
     attestation: {
       raw: {
@@ -84,6 +89,27 @@ app.get('*', (req, res) => {
       </body>
     </html>
     `);
+} catch (e) {
+  res.send(`
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <link rel="icon" type="image/png" href="/favicon.png" />
+      <title>TLSN Plugin Demo</title>
+      <script>
+      window.__PRELOADED_STATE__ = {};
+    </script>
+    <script defer src="/index.bundle.js"></script>
+    </head>
+    <body>
+      <div id="root"></div>
+      <div id="modal-root"></div>
+    </body>
+  </html>
+  `);
+}
 });
 
 app.post('/poap-claim', async (req, res) => {
@@ -92,13 +118,18 @@ app.post('/poap-claim', async (req, res) => {
   if (!screenName) {
     return res.status(400).send('Missing screen_name');
   }
-  await mutex.runExclusive(async () => {
-    const poapLink = getPoapLink(screenName);
-    if (!poapLink) {
-      return res.status(500).send('No more POAP links available');
-    }
-    res.json({ poapLink });
-  });
+  try {
+    await mutex.runExclusive(async () => {
+      const poapLink = getPoapLink(screenName);
+      if (!poapLink) {
+        return res.status(500).send('No more POAP links available');
+      }
+      res.json({ poapLink });
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send('Error generating POAP link');
+  }
 });
 
 app.post('/verify-attestation', async (req, res) => {
@@ -106,16 +137,20 @@ app.post('/verify-attestation', async (req, res) => {
   if (!attestation) {
     return res.status(400).send('Missing attestation');
   }
-  const notaryUrl = convertNotaryWsToHttp(attestation.meta.notaryUrl);
-  const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
-  const presentation = verify(attestation.data, notaryPem);
+  try {
+    const notaryUrl = convertNotaryWsToHttp(attestation.meta.notaryUrl);
+    const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
+    const presentation = verify(attestation.data, notaryPem);
 
-  const presentationObj = {
-    sent: presentation.sent,
-    recv: presentation.recv,
-  };
-
-  res.json({ presentationObj });
+    const presentationObj = {
+      sent: presentation.sent,
+      recv: presentation.recv,
+    };
+    res.json({ presentationObj });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send('Error verifying attestation')
+  }
 });
 
 app.listen(port, () => {
