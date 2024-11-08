@@ -106,6 +106,18 @@ app.post('/verify-attestation', async (req, res) => {
   if (!attestation) {
     return res.status(400).send('Missing attestation');
   }
+    /**
+   * Two potential uncaught errors are causing the server to shutdown:
+   *
+   * 1. fetchPublicKeyFromNotary will throw an error is notary url is localhost (invalid pub key)
+   * 2. I think verify would throw error or return null if notaryPem is undefined/invalid
+   *
+   * We should:
+   * 1. Refactor fetch public key from notary to return null on error
+   * 2. Refactor fetch public key to return a hardcoded pem of the localhost notary if url is localhost
+   * 3. Put this entire request handler in a try-catch and res.json({ error: error }) when an error is caught
+   * 4. Just in case, i would put the `/poap-claim` handler in a similar try-catch as well
+   */
   const notaryUrl = convertNotaryWsToHttp(attestation.meta.notaryUrl);
   const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
   const presentation = verify(attestation.data, notaryPem);
