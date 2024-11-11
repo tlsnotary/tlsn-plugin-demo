@@ -52,7 +52,8 @@ export function convertNotaryWsToHttp(notaryWs: string) {
 export async function fetchPublicKeyFromNotary(notaryUrl: string) {
   try {
     const url = new URL(notaryUrl);
-    const { hostname }  = url;
+    const { hostname } = url;
+    console.log('HOSTNAME', hostname);
     if (hostname === '127.0.0.1' || hostname === 'localhost') return localPem;
     const res = await fetch(notaryUrl + '/info');
     const json: any = await res.json();
