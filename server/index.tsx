@@ -10,8 +10,6 @@ import { Mutex } from 'async-mutex';
 //@ts-ignore
 import { verify } from '../rs/0.1.0-alpha.7/index.node';
 import { convertNotaryWsToHttp, fetchPublicKeyFromNotary } from './util/index';
-import { localPem } from '../web/utils/constants';
-
 
 const app = express();
 const port = 3030;
@@ -42,35 +40,33 @@ const mutex = new Mutex();
 
 app.get('*', (req, res) => {
   try {
-
-
-  const storeConfig: AppRootState = {
-    attestation: {
-      raw: {
-        version: '0.1.0-alpha.7',
-        data: '',
-        meta: {
-          notaryUrl: '',
-          websocketProxyUrl: '',
-          pluginUrl: '',
+    const storeConfig: AppRootState = {
+      attestation: {
+        raw: {
+          version: '0.1.0-alpha.7',
+          data: '',
+          meta: {
+            notaryUrl: '',
+            websocketProxyUrl: '',
+            pluginUrl: '',
+          },
         },
       },
-    },
-  };
+    };
 
-  const store = configureAppStore(storeConfig);
+    const store = configureAppStore(storeConfig);
 
-  const html = renderToString(
-    <Provider store={store}>
-      <StaticRouter location={req.url}>
-        <App />
-      </StaticRouter>
-    </Provider>,
-  );
+    const html = renderToString(
+      <Provider store={store}>
+        <StaticRouter location={req.url}>
+          <App />
+        </StaticRouter>
+      </Provider>,
+    );
 
-  const preloadedState = store.getState();
+    const preloadedState = store.getState();
 
-  res.send(`
+    res.send(`
     <!DOCTYPE html>
     <html lang="en">
       <head>
@@ -89,8 +85,8 @@ app.get('*', (req, res) => {
       </body>
     </html>
     `);
-} catch (e) {
-  res.send(`
+  } catch (e) {
+    res.send(`
   <!DOCTYPE html>
   <html lang="en">
     <head>
@@ -109,7 +105,7 @@ app.get('*', (req, res) => {
     </body>
   </html>
   `);
-}
+  }
 });
 
 app.post('/poap-claim', async (req, res) => {
@@ -140,7 +136,7 @@ app.post('/verify-attestation', async (req, res) => {
   try {
     const notaryUrl = convertNotaryWsToHttp(attestation.meta.notaryUrl);
     const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
-    console.log(notaryPem)
+    console.log(notaryPem);
     const presentation = await verify(attestation.data, notaryPem);
 
     const presentationObj = {
@@ -150,7 +146,7 @@ app.post('/verify-attestation', async (req, res) => {
     res.json({ presentationObj });
   } catch (e) {
     console.error(e);
-    res.status(500).send('Error verifying attestation')
+    res.status(500).send('Error verifying attestation');
   }
 });
 

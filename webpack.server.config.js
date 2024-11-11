@@ -1,7 +1,7 @@
 var webpack = require('webpack'),
   path = require('path'),
+  CompressionPlugin = require('compression-webpack-plugin'),
   CopyWebpackPlugin = require('copy-webpack-plugin'),
-  HtmlWebpackPlugin = require('html-webpack-plugin'),
   TerserPlugin = require('terser-webpack-plugin');
 var { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
@@ -88,8 +88,14 @@ const options = {
     new CopyWebpackPlugin({
       patterns: [
         { from: 'server/util/poaps.txt', to: 'util/' },
-        { from: 'server/util/assignments.json', to: 'util/'}
+        { from: 'server/util/assignments.json', to: 'util/' }
       ],
+    }),
+    new CompressionPlugin({
+      algorithm: 'gzip',
+      test: /\.(js|css|html|svg)$/,
+      threshold: 10240,
+      deleteOriginalAssets: false,
     }),
   ].filter(Boolean),
   infrastructureLogging: {
