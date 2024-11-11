@@ -167,6 +167,12 @@ var options = {
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
     }),
+    new CompressionPlugin({
+      algorithm: 'gzip',
+      test: /\.(js|css|html|svg)$/,
+      threshold: 10240,
+      deleteOriginalAssets: false,
+    }),
   ].filter(Boolean),
   infrastructureLogging: {
     level: 'info',
