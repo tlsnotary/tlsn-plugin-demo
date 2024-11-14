@@ -76,7 +76,7 @@ export default function Steps(): ReactElement {
   async function handleGetPlugins() {
     try {
       const plugins = await client.getPlugins('**', '**', {
-        id: 'twitter-plugin',
+        hash: '6931d2ad63340d3a1fb1a5c1e3f4454c5a518164d6de5ad272e744832355ee02',
       });
       if (plugins.length > 0) {
         setPluginID(plugins[0].hash);
@@ -91,7 +91,6 @@ export default function Steps(): ReactElement {
     try {
       const plugin = await client.installPlugin(
         'https://github.com/tlsnotary/tlsn-extension/raw/main/src/assets/plugins/twitter_profile.wasm',
-        { id: 'twitter-plugin' },
       );
       setPluginID(plugin);
       setStep(2);
