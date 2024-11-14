@@ -169,7 +169,7 @@ export default function Steps(): ReactElement {
                     Click through the steps in the sidebar
                   </li>
                   <li className="text-base font-light">
-                    Don't close the sidebar until notarization is finished
+                    Don't close the sidebar or refresh the page until notarization is finished
                   </li>
                   <li className="text-base font-light">
                     If successful the attestation field will populate with the
