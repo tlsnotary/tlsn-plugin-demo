@@ -76,8 +76,7 @@ export default function Steps(): ReactElement {
   async function handleGetPlugins() {
     try {
       const plugins = await client.getPlugins('**', '**');
-
-      const targetPlugin = plugins.find(plugin =>
+      const targetPlugin = plugins.find((plugin: any) =>
         plugin.title === "Twitter Profile" &&
         Array.isArray(plugin.headers) &&
         plugin.headers.includes('https://api.x.com/1.1/account/settings.json')
@@ -116,7 +115,6 @@ export default function Steps(): ReactElement {
   async function handleRunPlugin() {
     try {
       setLoading(true);
-      console.log(pluginID)
       const pluginData = await client.runPlugin(pluginID);
       setLoading(false);
       setPluginData(pluginData);
