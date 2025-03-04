@@ -48,48 +48,54 @@ export const getUserPoap = async (
   return null;
 };
 
-export const assignPoapToUser = async (
-  screen_name: string,
-): Promise<string | null> => {
+export const assignPoapToUser = async (screen_name: string): Promise<string | null> => {
   const existingPoap = await getUserPoap(screen_name);
   if (existingPoap) return existingPoap;
 
-  const poapsDocRef = db.collection('poaps').doc('poaps');
+  const poapsDocRef = db.collection("poaps").doc("poaps");
   const poapsDoc = await poapsDocRef.get();
 
   if (!poapsDoc.exists) {
-    console.error('POAPs document not found in Firestore.');
+    console.error("POAPs document not found in Firestore.");
     return null;
   }
 
-  const poapsData = poapsDoc.data();
-  if (!poapsData || Object.keys(poapsData).length === 0) {
-    console.log('No available POAPs left.');
+  const poapsData = poapsDoc.data()?.links || {};
+  const poapKeys = Object.keys(poapsData);
+
+  if (poapKeys.length === 0) {
+    console.log("No available POAPs left.");
     return null;
   }
 
-  const firstKey = Object.keys(poapsData)[0];
+  const firstKey = poapKeys[0];
   const poapLink = poapsData[firstKey];
 
   if (!poapLink) {
-    console.error('Invalid POAP link found:', poapsData);
+    console.error("Invalid POAP link found:", poapsData);
     return null;
   }
 
   try {
-    await db.collection('poapAssignments').doc(screen_name).set({
+    const batch = db.batch();
+
+
+    const assignmentRef = db.collection("poapAssignments").doc(screen_name);
+    batch.set(assignmentRef, {
       poapLink,
       screen_name,
       assignedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    await poapsDocRef.update({
-      [firstKey]: admin.firestore.FieldValue.delete(),
+    batch.update(poapsDocRef, {
+      [`links.${firstKey}`]: admin.firestore.FieldValue.delete(),
     });
+
+    await batch.commit();
 
     return poapLink;
   } catch (error) {
-    console.error('Error writing to Firestore:', error);
+    console.error("Error writing to Firestore:", error);
     return null;
   }
 };
