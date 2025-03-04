@@ -6,3 +6,4 @@ build
 .env
 poaps.txt
 rs/**/target
+secrets
