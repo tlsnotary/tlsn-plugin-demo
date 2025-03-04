@@ -6,4 +6,4 @@ build
 .env
 poaps.txt
 rs/**/target
-secrets
+firebase-admin.json
