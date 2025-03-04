@@ -76,10 +76,13 @@ export default function Steps(): ReactElement {
   async function handleGetPlugins() {
     try {
       const plugins = await client.getPlugins('**', '**');
-      const targetPlugin = plugins.find((plugin: any) =>
-        plugin.title === "Twitter Profile" &&
-        Array.isArray(plugin.headers) &&
-        plugin.headers.includes('https://api.x.com/1.1/account/settings.json')
+      const targetPlugin = plugins.find(
+        (plugin: any) =>
+          plugin.title === 'Twitter Profile' &&
+          Array.isArray(plugin.headers) &&
+          plugin.headers.includes(
+            'https://api.x.com/1.1/account/settings.json',
+          ),
       );
 
       if (targetPlugin) {
@@ -90,7 +93,6 @@ export default function Steps(): ReactElement {
       console.error(error);
     }
   }
-
 
   async function handlePluginInstall() {
     try {
