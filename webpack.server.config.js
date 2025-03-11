@@ -87,8 +87,7 @@ const options = {
     new webpack.EnvironmentPlugin(['NODE_ENV']),
     new CopyWebpackPlugin({
       patterns: [
-        { from: 'server/util/poaps.txt', to: 'util/' },
-        { from: 'server/util/assignments.json', to: 'util/' }
+        { from: 'server/util/firebase-admin.json', to: 'util/' },
       ],
     }),
     new CompressionPlugin({

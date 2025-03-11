@@ -4,7 +4,7 @@ import { localPem } from '../../web/utils/constants';
 import admin from 'firebase-admin';
 
 const serviceAccount = JSON.parse(
-  fs.readFileSync('secrets/firebase-admin.json', 'utf8'),
+  fs.readFileSync(path.join(__dirname, 'util/firebase-admin.json'), 'utf8')
 );
 
 admin.initializeApp({
