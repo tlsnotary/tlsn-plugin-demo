@@ -30,6 +30,13 @@ export default function Steps(): ReactElement {
   const [exploding, setExploding] = useState<boolean>(false);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && window._paq) {
+      window._paq.push(['trackEvent', 'Demo', 'Step', steps[step]]);
+    }
+  }, [step]);
+
+  
+  useEffect(() => {
     const checkExtension = () => {
       //@ts-ignore
       if (typeof window.tlsn !== 'undefined') {
