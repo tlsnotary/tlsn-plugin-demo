@@ -43,7 +43,7 @@ app.get('*', (req, res) => {
     const storeConfig: AppRootState = {
       attestation: {
         raw: {
-          version: '0.1.0-alpha.7',
+          version: '0.1.0-alpha.8',
           data: '',
           meta: {
             notaryUrl: '',
@@ -135,14 +135,12 @@ app.post('/verify-attestation', async (req, res) => {
   if (!attestation) {
     return res.status(400).send('Missing attestation');
   }
-  console.log(attestation);
+
   try {
     const notaryUrl = convertNotaryWsToHttp(attestation.meta.notaryUrl);
-    console.log(notaryUrl);
     const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
-    console.log(notaryPem);
     const presentation = await verify(attestation.data, notaryPem);
-    console.log(presentation);
+
     const presentationObj = {
       sent: presentation.sent,
       recv: presentation.recv,

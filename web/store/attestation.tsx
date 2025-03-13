@@ -21,7 +21,7 @@ export type State = {
 
 export const initState: State = {
   raw: {
-    version: '0.1.0-alpha.7',
+    version: '0.1.0-alpha.8',
     data: '',
     meta: {
       notaryUrl: '',
