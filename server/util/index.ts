@@ -1,44 +1,16 @@
 import path from 'path';
 import fs from 'fs';
 import { localPem } from '../../web/utils/constants';
+import admin from 'firebase-admin';
 
-const poapLinksPath = path.join(__dirname, 'util', 'poaps.txt');
-const assignmentsFilePath = path.join(__dirname, 'util', 'assignments.json');
+const serviceAccount = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'util/firebase-admin.json'), 'utf8')
+);
 
-export const loadPoapLinks = (): string[] => {
-  const fileContent = fs.readFileSync(poapLinksPath, 'utf-8');
-  return fileContent.trim().split('\n');
-};
-
-export const loadAssignments = (): Record<string, string> => {
-  if (fs.existsSync(assignmentsFilePath)) {
-    const fileContent = fs.readFileSync(assignmentsFilePath, 'utf-8');
-    return JSON.parse(fileContent);
-  }
-  return {};
-};
-
-export const saveAssignments = (assignments: Record<string, string>) => {
-  fs.writeFileSync(assignmentsFilePath, JSON.stringify(assignments, null, 2));
-};
-
-export const getPoapLink = (screenName: string): string | null => {
-  const poapLinks = loadPoapLinks();
-  const assignments = loadAssignments();
-  if (assignments[screenName]) {
-    return assignments[screenName];
-  }
-  if (poapLinks.length === 0) {
-    return null;
-  }
-
-  const newLink = poapLinks.shift();
-  assignments[screenName] = newLink as string;
-  saveAssignments(assignments);
-  fs.writeFileSync(poapLinksPath, poapLinks.join('\n'));
-
-  return newLink || null;
-};
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+const db = admin.firestore();
 
 export function convertNotaryWsToHttp(notaryWs: string) {
   const { protocol, pathname, hostname, port } = new URL(notaryWs);
@@ -63,3 +35,67 @@ export async function fetchPublicKeyFromNotary(notaryUrl: string) {
     return null;
   }
 }
+
+export const getUserPoap = async (
+  screen_name: string,
+): Promise<string | null> => {
+  const assignmentRef = db.collection('poapAssignments').doc(screen_name);
+  const assignmentSnap = await assignmentRef.get();
+
+  if (assignmentSnap.exists) {
+    return assignmentSnap.data()?.poapLink || null;
+  }
+  return null;
+};
+
+export const assignPoapToUser = async (screen_name: string): Promise<string | null> => {
+  const existingPoap = await getUserPoap(screen_name);
+  if (existingPoap) return existingPoap;
+
+  const poapsDocRef = db.collection("poaps").doc("poaps");
+  const poapsDoc = await poapsDocRef.get();
+
+  if (!poapsDoc.exists) {
+    console.error("POAPs document not found in Firestore.");
+    return null;
+  }
+
+  const poapsData = poapsDoc.data()?.links || {};
+  const poapKeys = Object.keys(poapsData);
+
+  if (poapKeys.length === 0) {
+    console.log("No available POAPs left.");
+    return null;
+  }
+
+  const firstKey = poapKeys[0];
+  const poapLink = poapsData[firstKey];
+
+  if (!poapLink) {
+    console.error("Invalid POAP link found:", poapsData);
+    return null;
+  }
+
+  try {
+    const batch = db.batch();
+
+
+    const assignmentRef = db.collection("poapAssignments").doc(screen_name);
+    batch.set(assignmentRef, {
+      poapLink,
+      screen_name,
+      assignedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    batch.update(poapsDocRef, {
+      [`links.${firstKey}`]: admin.firestore.FieldValue.delete(),
+    });
+
+    await batch.commit();
+
+    return poapLink;
+  } catch (error) {
+    console.error("Error writing to Firestore:", error);
+    return null;
+  }
+};

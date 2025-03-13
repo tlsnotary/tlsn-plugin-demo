@@ -5,11 +5,11 @@ import { StaticRouter } from 'react-router-dom/server';
 import App from '../web/pages/App';
 import configureAppStore, { AppRootState } from '../web/store';
 import { Provider } from 'react-redux';
-import { getPoapLink } from './util/index';
 import { Mutex } from 'async-mutex';
 //@ts-ignore
-import { verify } from '../rs/0.1.0-alpha.7/index.node';
+import { verify } from '../rs/0.1.0-alpha.8/index.node';
 import { convertNotaryWsToHttp, fetchPublicKeyFromNotary } from './util/index';
+import { assignPoapToUser } from './util/index';
 
 const app = express();
 const port = 3030;
@@ -110,21 +110,23 @@ app.get('*', (req, res) => {
 
 app.post('/poap-claim', async (req, res) => {
   const { screenName } = req.body;
-
   if (!screenName) {
-    return res.status(400).send('Missing screen_name');
+    return res.status(400).json({ error: 'Missing screen_name' });
   }
+
   try {
     await mutex.runExclusive(async () => {
-      const poapLink = getPoapLink(screenName);
+      const poapLink = await assignPoapToUser(screenName);
+
       if (!poapLink) {
-        return res.status(500).send('No more POAP links available');
+        return res.status(404).json({ error: 'No POAPs available' });
       }
-      res.json({ poapLink });
+
+      return res.json({ poapLink });
     });
-  } catch (e) {
-    console.error(e);
-    res.status(500).send('Error generating POAP link');
+  } catch (error) {
+    console.error('Error claiming POAP:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -133,11 +135,14 @@ app.post('/verify-attestation', async (req, res) => {
   if (!attestation) {
     return res.status(400).send('Missing attestation');
   }
+  console.log(attestation);
   try {
     const notaryUrl = convertNotaryWsToHttp(attestation.meta.notaryUrl);
+    console.log(notaryUrl);
     const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
+    console.log(notaryPem);
     const presentation = await verify(attestation.data, notaryPem);
-
+    console.log(presentation);
     const presentationObj = {
       sent: presentation.sent,
       recv: presentation.recv,
