@@ -6,11 +6,10 @@ ENV PATH="${PATH}:/root/.cargo/bin"
 
 COPY . .
 
-
 RUN apt-get update && apt-get install -y curl && apt-get install netcat-openbsd -y
 RUN curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
 RUN npm install
-RUN npm i --prefix rs/0.1.0-alpha.8/
+RUN npm i --prefix rs/0.1.0-alpha.9/
 RUN npm run build
 
 EXPOSE ${PORT}
