@@ -12,7 +12,6 @@ import { formatDataPreview } from '../../utils/utils';
 
 const steps = [
   'Connect Extension',
-  'Install Plugin',
   'Run Plugin',
   'Verify Attestation',
   '🎉 Claim POAP 🎉',
@@ -20,7 +19,6 @@ const steps = [
 
 export default function Steps(): ReactElement {
   const [extensionInstalled, setExtensionInstalled] = useState(false);
-  const [pluginID, setPluginID] = useState('');
   const [step, setStep] = useState<number>(0);
   const [client, setClient] = useState<any>(null);
   const [pluginData, setPluginData] = useState<PresentationJSON | null>(null);
@@ -35,7 +33,6 @@ export default function Steps(): ReactElement {
     }
   }, [step]);
 
-  
   useEffect(() => {
     const checkExtension = () => {
       //@ts-ignore
@@ -80,54 +77,15 @@ export default function Steps(): ReactElement {
     }
   }
 
-  async function handleGetPlugins() {
-    try {
-      const plugins = await client.getPlugins('**', '**');
-      const targetPlugin = plugins.find(
-        (plugin: any) =>
-          plugin.title === 'Twitter Profile' &&
-          Array.isArray(plugin.headers) &&
-          plugin.headers.includes(
-            'https://api.x.com/1.1/account/settings.json',
-          ),
-      );
-
-      if (targetPlugin) {
-        setPluginID(targetPlugin.hash);
-        setStep(2);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async function handlePluginInstall() {
-    try {
-      const plugin = await client.installPlugin(
-        'https://github.com/tlsnotary/tlsn-extension/raw/main/src/assets/plugins/twitter_profile.wasm',
-      );
-      setPluginID(plugin);
-      setStep(2);
-    } catch (error: any) {
-      console.log(error.message);
-      if (error.message === 'Plugin already exist.') {
-        try {
-          await handleGetPlugins();
-        } catch (error) {
-          console.log(error);
-        }
-      }
-      console.log(error);
-    }
-  }
-
   async function handleRunPlugin() {
     try {
       setLoading(true);
-      const pluginData = await client.runPlugin(pluginID);
+      const pluginData = await client.runPlugin(
+        'https://github.com/tlsnotary/tlsn-extension/raw/main/src/assets/plugins/twitter_profile.wasm'
+      );
       setLoading(false);
       setPluginData(pluginData);
-      setStep(3);
+      setStep(2);
     } catch (error) {
       setLoading(false);
       console.log(error);
@@ -166,13 +124,6 @@ export default function Steps(): ReactElement {
               </button>
             )}
             {step === 1 && (
-              <div className="flex flex-col gap-2">
-                <button onClick={handlePluginInstall} className="button">
-                  Install Plugin
-                </button>
-              </div>
-            )}
-            {step === 2 && (
               <div className="flex flex-col items-center justify-center gap-2">
                 <ul className="flex flex-col items-center justify-center gap-1">
                   <li className="text-base font-light">
@@ -196,7 +147,7 @@ export default function Steps(): ReactElement {
                 </Button>
               </div>
             )}
-            {step === 3 && (
+            {step === 2 && (
               <div>
                 <ul className="flex flex-col justify-center items-center gap-1">
                   <li className="text-base font-light">
@@ -210,7 +161,7 @@ export default function Steps(): ReactElement {
                 </ul>
               </div>
             )}
-            {step === 5 && (
+            {step === 3 && (
               <>
                 <ClaimPoap
                   screen_name={screenName}
@@ -266,7 +217,7 @@ function DisplayPluginData({
       if (response.status === 200) {
         const data = await response.json();
         setTranscript(data.presentationObj);
-        setStep(5);
+        setStep(3);
       } else {
         console.log(await response.text());
       }
@@ -287,7 +238,7 @@ function DisplayPluginData({
           </pre>
         </div>
       </div>
-      <button disabled={step !== 3} onClick={handleVerify} className="button">
+      <button disabled={step !== 2} onClick={handleVerify} className="button">
         Verify
       </button>
       <div className="w-96">
