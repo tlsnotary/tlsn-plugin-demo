@@ -3,14 +3,18 @@ import fs from 'fs';
 import { localPem } from '../../web/utils/constants';
 import admin from 'firebase-admin';
 
-const serviceAccount = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'util/firebase-admin.json'), 'utf8')
-);
+let db: FirebaseFirestore.Firestore | null = null;
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-const db = admin.firestore();
+if (process.env.POAP) {
+  const serviceAccount = JSON.parse(
+    fs.readFileSync(path.join(__dirname, 'util/firebase-admin.json'), 'utf8')
+  );
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+  db = admin.firestore();
+}
 
 export function convertNotaryWsToHttp(notaryWs: string) {
   const { protocol, pathname, hostname, port } = new URL(notaryWs);
@@ -39,17 +43,22 @@ export async function fetchPublicKeyFromNotary(notaryUrl: string) {
 export const getUserPoap = async (
   screen_name: string,
 ): Promise<string | null> => {
-  const assignmentRef = db.collection('poapAssignments').doc(screen_name);
-  const assignmentSnap = await assignmentRef.get();
+  if (db) {
+    const assignmentRef = db.collection('poapAssignments').doc(screen_name);
+    const assignmentSnap = await assignmentRef.get();
 
-  if (assignmentSnap.exists) {
-    return assignmentSnap.data()?.poapLink || null;
+    if (assignmentSnap.exists) {
+      return assignmentSnap.data()?.poapLink || null;
+    }
   }
   return null;
 };
 
 export const assignPoapToUser = async (screen_name: string): Promise<string | null> => {
   const existingPoap = await getUserPoap(screen_name);
+  if (!db) {
+    return null;
+  }
   if (existingPoap) return existingPoap;
 
   const poapsDocRef = db.collection("poaps").doc("poaps");
