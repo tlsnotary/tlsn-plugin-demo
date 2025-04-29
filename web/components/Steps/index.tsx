@@ -13,8 +13,6 @@ import { formatDataPreview } from '../../utils/utils';
 const steps = [
   'Connect Extension',
   'Run Plugin',
-  'Verify Attestation',
-  '🎉 Claim POAP 🎉',
 ];
 
 export default function Steps(): ReactElement {
@@ -63,7 +61,9 @@ export default function Steps(): ReactElement {
       const match = transcript.recv.match(/"screen_name":"([^"]+)"/);
       const screenName = match ? match[1] : null;
       setScreenName(screenName);
-      setExploding(true);
+      if (screenName) {
+        setExploding(true);
+      }
     }
   }, [transcript]);
 
@@ -83,12 +83,26 @@ export default function Steps(): ReactElement {
       const pluginData = await client.runPlugin(
         'https://github.com/tlsnotary/tlsn-extension/raw/main/src/assets/plugins/twitter_profile.wasm'
       );
-      setLoading(false);
       setPluginData(pluginData);
-      setStep(2);
+
+      const response = await fetch('/verify-attestation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ attestation: pluginData }),
+      });
+      if (response.status === 200) {
+        const data = await response.json();
+        setTranscript(data.presentationObj);
+        setStep(1); // Stay on Run Plugin step
+      } else {
+        console.log(await response.text());
+      }
     } catch (error) {
-      setLoading(false);
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -123,7 +137,7 @@ export default function Steps(): ReactElement {
                 Connect
               </button>
             )}
-            {step === 1 && (
+            {step === 1 && !pluginData && (
               <div className="flex flex-col items-center justify-center gap-2">
                 <ul className="flex flex-col items-center justify-center gap-1">
                   <li className="text-base font-light">
@@ -138,8 +152,8 @@ export default function Steps(): ReactElement {
                     notarization is finished
                   </li>
                   <li className="text-base font-light">
-                    If successful the attestation field will populate with the
-                    attestation from the notary
+                    If successful, the attestation and verified data will be
+                    displayed below
                   </li>
                 </ul>
                 <Button onClick={handleRunPlugin} loading={loading}>
@@ -147,40 +161,21 @@ export default function Steps(): ReactElement {
                 </Button>
               </div>
             )}
-            {step === 2 && (
-              <div>
-                <ul className="flex flex-col justify-center items-center gap-1">
-                  <li className="text-base font-light">
-                    Click the "Verify" button below to verify the attestation
-                  </li>
-                  <li className="text-base font-light">
-                    If successful the verified data will show in the
-                    Presentation field and provide you with a link to claim your
-                    POAP
-                  </li>
-                </ul>
+            {step === 1 && pluginData && screenName && (
+              <div className="flex flex-col items-center justify-center gap-2">
+                <h3 className="text-lg font-semibold text-center">
+                  Optional: Claim Your POAP
+                </h3>
+                <ClaimPoap screen_name={screenName} exploding={exploding} />
               </div>
             )}
-            {step === 3 && (
-              <>
-                <ClaimPoap
-                  screen_name={screenName}
-                  exploding={exploding}
-                  setStep={setStep}
-                />
-              </>
-            )}
           </div>
-          {pluginData ? (
+          {pluginData && (
             <DisplayPluginData
               step={step}
               pluginData={pluginData}
               transcript={transcript}
-              setTranscript={setTranscript}
-              setStep={setStep}
             />
-          ) : (
-            <></>
           )}
         </>
       ) : (
@@ -194,37 +189,12 @@ function DisplayPluginData({
   step,
   pluginData,
   transcript,
-  setTranscript,
-  setStep,
 }: {
   step: number;
   pluginData: any;
   transcript: any;
-  setTranscript: any;
-  setStep: any;
 }): ReactElement {
   const [tab, setTab] = useState<'sent' | 'recv'>('sent');
-
-  async function handleVerify() {
-    try {
-      const response = await fetch('/verify-attestation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ attestation: pluginData }),
-      });
-      if (response.status === 200) {
-        const data = await response.json();
-        setTranscript(data.presentationObj);
-        setStep(3);
-      } else {
-        console.log(await response.text());
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }
 
   return (
     <div className="flex justify-center items-center space-x-4 mt-8">
@@ -238,9 +208,6 @@ function DisplayPluginData({
           </pre>
         </div>
       </div>
-      <button disabled={step !== 2} onClick={handleVerify} className="button">
-        Verify
-      </button>
       <div className="w-96">
         <div className="p-2 bg-gray-200 border-t rounded-t-md text-center text-lg font-semibold">
           Presentation
@@ -278,35 +245,37 @@ function ClaimPoap({
 }: {
   screen_name: string;
   exploding: boolean;
-  setStep: any;
 }): ReactElement {
   const [poapLink, setPoapLink] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    const handleClaimPoap = async () => {
-      try {
-        if (!screen_name) return;
-        const response = await fetch('/poap-claim', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ screenName: screen_name }),
-        });
-        if (response.status === 200) {
-          const data = await response.json();
-          setPoapLink(data.poapLink);
-        } else {
-          setError(await response.text());
-        }
-      } catch (error) {
-        console.log(error);
+  const handleClaimPoap = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (!screen_name) return;
+      const response = await fetch('/poap-claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ screenName: screen_name }),
+      });
+      if (response.status === 200) {
+        const data = await response.json();
+        setPoapLink(data.poapLink);
+      } else {
+        const errorText = await response.text();
+        setError(errorText || 'Failed to claim POAP');
       }
-    };
-
-    handleClaimPoap();
-  }, [screen_name]);
+    } catch (error) {
+      console.error('Error claiming POAP:', error);
+      setError('Failed to connect to the server');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const mediumProps: ConfettiProps = {
     force: 0.6,
@@ -317,13 +286,22 @@ function ClaimPoap({
   };
 
   return (
-    <div>
-      {poapLink !== '' && (
-        <a className="button" href={poapLink} target="_blank">
+    <div className="flex flex-col items-center gap-2">
+      {!poapLink && !error && (
+        <Button
+          onClick={handleClaimPoap}
+          loading={loading}
+        >
           Claim POAP!
+        </Button>
+      )}
+      {poapLink && (
+        <a className="button" href={poapLink} target="_blank">
+          View Your POAP!
         </a>
       )}
-      {exploding && <ConfettiExplosion {...mediumProps} />}
+      {error && <p className="text-red-500">Error: {error}</p>}
+      {exploding && poapLink && <ConfettiExplosion {...mediumProps} />}
     </div>
   );
 }
