@@ -1,4 +1,5 @@
 use k256::pkcs8::DecodePublicKey;
+use k256::pkcs8::EncodePublicKey;
 use neon::prelude::*;
 use tlsn_core::{
     presentation::{Presentation, PresentationOutput},
@@ -44,6 +45,11 @@ fn verify_presentation(
         .map_err(|x| format!("Invalid verifying key: {}", x))?;
 
     if notary_key != verifying_key {
+        let verifying_key_pem = verifying_key
+            .to_public_key_pem(Default::default())
+            .map_err(|e| format!("Failed to encode verifying key to PEM: {}", e))?;
+        println!("Verifying key PEM:\n{}", verifying_key_pem);
+
         Err("The verifying key does not match the notary key")?;
     }
 
@@ -91,7 +97,7 @@ mod tests {
     fn example_presentation() -> String {
         let example = include_str!("example.json");
         let presentation: Presentation = serde_json::from_str(&example).unwrap();
-        assert_eq!("0.1.0-alpha.7", presentation.version);
+        assert_eq!("0.1.0-alpha.11", presentation.version);
         presentation.data
     }
 
@@ -99,19 +105,19 @@ mod tests {
     fn test_verify() {
         let notary_key_cx = String::from(
             "-----BEGIN PUBLIC KEY-----
-MDYwEAYHKoZIzj0CAQYFK4EEAAoDIgADe0jxnBObaIj7Xjg6TXLCM1GG/VhY5650
-OrS/jgcbBuc=
+MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEDahdjamzQ2UA5S1g8sFcdgXtnwWVPQIp
+SlugtbkoGpqLP+9Dczt2hVjQD/SXI2GL/mAgbOekjw1Kj/KcjrLBqw==
 -----END PUBLIC KEY-----",
         );
 
         let (sent, recv, time) =
             verify_presentation(example_presentation(), notary_key_cx).unwrap();
 
-        assert_eq!(1728416631, time);
-        assert!(sent.contains("host: example.com"));
+        assert_eq!(1748415894, time);
+        assert!(sent.contains("host: raw.githubusercontent.com"));
         assert!(sent.contains("XXXXXXXXXXXXXXXXXX"));
-        assert!(recv.contains("<title>Example Domain</title>"));
-        assert!(recv.contains("Date: Tue, 08 Oct 2024"));
+        assert!(recv.contains("\"id\": 1234567890"));
+        assert!(recv.contains("\"city\": \"Anytown\""));
     }
 
     #[test]
