@@ -5,7 +5,6 @@ var webpack = require('webpack'),
   TerserPlugin = require('terser-webpack-plugin');
 var { CleanWebpackPlugin } = require('clean-webpack-plugin');
 var ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
-var ReactRefreshTypeScript = require('react-refresh-typescript');
 
 const ASSET_PATH = process.env.ASSET_PATH || '/';
 
@@ -84,11 +83,6 @@ var options = {
           {
             loader: require.resolve("ts-loader"),
             options: {
-              getCustomTransformers: () => ({
-                before: [isDevelopment && ReactRefreshTypeScript()].filter(
-                  Boolean
-                ),
-              }),
               transpileOnly: isDevelopment,
               allowTsInNodeModules: true,
             },
@@ -159,6 +153,11 @@ var options = {
         },
         {
           from: "static/favicon.png",
+          to: path.join(__dirname, "build", "ui"),
+          force: true,
+        },
+        {
+          from: "static/logo.svg",
           to: path.join(__dirname, "build", "ui"),
           force: true,
         },

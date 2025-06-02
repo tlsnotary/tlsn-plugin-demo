@@ -10,10 +10,7 @@ import Button from '../Button';
 import ConfettiExplosion, { ConfettiProps } from 'react-confetti-explosion';
 import { formatDataPreview } from '../../utils/utils';
 
-const steps = [
-  'Connect Extension',
-  'Run Plugin',
-];
+const steps = ['Connect Extension', 'Run Plugin'];
 
 export default function Steps(): ReactElement {
   const [extensionInstalled, setExtensionInstalled] = useState(false);
@@ -81,10 +78,10 @@ export default function Steps(): ReactElement {
     try {
       setLoading(true);
       const pluginData = await client.runPlugin(
-        'https://github.com/tlsnotary/tlsn-extension/raw/main/src/assets/plugins/twitter_profile.wasm'
+        'https://github.com/tlsnotary/tlsn-extension/raw/main/src/assets/plugins/twitter_profile.wasm',
       );
       setPluginData(pluginData);
-
+      console.log(pluginData);
       const response = await fetch('/verify-attestation', {
         method: 'POST',
         headers: {
@@ -95,7 +92,7 @@ export default function Steps(): ReactElement {
       if (response.status === 200) {
         const data = await response.json();
         setTranscript(data.presentationObj);
-        setStep(1); // Stay on Run Plugin step
+        setStep(1);
       } else {
         console.log(await response.text());
       }
@@ -288,10 +285,7 @@ function ClaimPoap({
   return (
     <div className="flex flex-col items-center gap-2">
       {!poapLink && !error && (
-        <Button
-          onClick={handleClaimPoap}
-          loading={loading}
-        >
+        <Button onClick={handleClaimPoap} loading={loading}>
           Claim POAP!
         </Button>
       )}
