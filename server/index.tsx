@@ -7,7 +7,7 @@ import configureAppStore, { AppRootState } from '../web/store';
 import { Provider } from 'react-redux';
 import { Mutex } from 'async-mutex';
 //@ts-ignore
-import { verify } from '../rs/0.1.0-alpha.10/index.node';
+import { verify } from '../rs/0.1.0-alpha.11/index.node';
 import { convertNotaryWsToHttp, fetchPublicKeyFromNotary } from './util/index';
 import { assignPoapToUser } from './util/index';
 
@@ -43,7 +43,7 @@ app.get('*', (req, res) => {
     const storeConfig: AppRootState = {
       attestation: {
         raw: {
-          version: '0.1.0-alpha.10',
+          version: '0.1.0-alpha.11',
           data: '',
           meta: {
             notaryUrl: '',
@@ -137,8 +137,9 @@ app.post('/verify-attestation', async (req, res) => {
   }
 
   try {
-    const notaryUrl = convertNotaryWsToHttp(attestation.meta.notaryUrl);
+    const notaryUrl = attestation.meta.notaryUrl;
     const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
+
     const presentation = await verify(attestation.data, notaryPem);
 
     const presentationObj = {
