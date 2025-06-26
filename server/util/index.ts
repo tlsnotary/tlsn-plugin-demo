@@ -3,7 +3,7 @@ import fs from 'fs';
 import admin from 'firebase-admin';
 
 const serviceAccount = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'util/firebase-admin.json'), 'utf8')
+  fs.readFileSync(path.join(__dirname, 'util/firebase-admin.json'), 'utf8'),
 );
 
 admin.initializeApp({
@@ -51,11 +51,11 @@ export const assignPoapToUser = async (
   const existingPoap = await getUserPoap(screen_name);
   if (existingPoap) return existingPoap;
 
-  const poapsDocRef = db.collection("poaps").doc("poaps");
+  const poapsDocRef = db.collection('poaps').doc('poaps');
   const poapsDoc = await poapsDocRef.get();
 
   if (!poapsDoc.exists) {
-    console.error("POAPs document not found in Firestore.");
+    console.error('POAPs document not found in Firestore.');
     return null;
   }
 
@@ -63,7 +63,7 @@ export const assignPoapToUser = async (
   const poapKeys = Object.keys(poapsData);
 
   if (poapKeys.length === 0) {
-    console.log("No available POAPs left.");
+    console.log('No available POAPs left.');
     return null;
   }
 
@@ -71,7 +71,7 @@ export const assignPoapToUser = async (
   const poapLink = poapsData[firstKey];
 
   if (!poapLink) {
-    console.error("Invalid POAP link found:", poapsData);
+    console.error('Invalid POAP link found:', poapsData);
     return null;
   }
 
@@ -93,7 +93,7 @@ export const assignPoapToUser = async (
 
     return poapLink;
   } catch (error) {
-    console.error("Error writing to Firestore:", error);
+    console.error('Error writing to Firestore:', error);
     return null;
   }
 };
