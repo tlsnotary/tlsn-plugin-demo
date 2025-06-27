@@ -97,7 +97,7 @@ mod tests {
     fn example_presentation() -> String {
         let example = include_str!("example.json");
         let presentation: Presentation = serde_json::from_str(&example).unwrap();
-        assert_eq!("0.1.0-alpha.11", presentation.version);
+        assert_eq!("0.1.0-alpha.12", presentation.version);
         presentation.data
     }
 
