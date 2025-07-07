@@ -12,10 +12,10 @@ const MatomoTracking = () => {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      var _paq = (window._paq = window._paq || []);
+      const _paq = (window._paq = window._paq || []);
       _paq.push(['setTrackerUrl', 'https://psedev.matomo.cloud/matomo.php']);
       _paq.push(['setSiteId', '16']);
-      let script = document.createElement('script');
+      const script = document.createElement('script');
       script.async = true;
       script.src = 'https://cdn.matomo.cloud/psedev.matomo.cloud/matomo.js';
       document.head.appendChild(script);
@@ -23,7 +23,6 @@ const MatomoTracking = () => {
   }, []);
 
   useEffect(() => {
-
     if (typeof window !== 'undefined' && window._paq) {
       window._paq.push(['setCustomUrl', window.location.pathname]);
       window._paq.push(['trackPageView']);
