@@ -12,7 +12,7 @@ import { convertNotaryWsToHttp, fetchPublicKeyFromNotary } from './util/index';
 import { assignPoapToUser } from './util/index';
 
 const app = express();
-const port = 3030;
+const port = 3031;
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
