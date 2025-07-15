@@ -38,6 +38,78 @@ app.use(express.static('build/ui'));
 app.use(express.json());
 const mutex = new Mutex();
 
+const sessions = new Map<string, string>();
+
+app.post('/update-session', async (req, res) => {
+  console.log('update-session', req.body);
+  const { screen_name, session_id } = req.body;
+
+  if (!screen_name || !session_id) {
+    return res.status(400).json({ error: 'Missing screen_name or session_id' });
+  }
+
+  sessions.set(session_id, screen_name);
+  res.json({ success: true });
+});
+
+app.post('/check-session', async (req, res) => {
+  const { session_id } = req.body;
+  if (!session_id) {
+    return res.status(400).json({ error: 'Missing session_id' });
+  }
+  const screen_name = sessions.get(session_id);
+  if (!screen_name) {
+    return res.status(404).json({ error: 'Session not found' });
+  }
+  sessions.delete(session_id);
+  res.json({ screen_name });
+});
+
+app.post('/poap-claim', async (req, res) => {
+  const { screenName } = req.body;
+  if (!screenName) {
+    return res.status(400).json({ error: 'Missing screen_name' });
+  }
+
+  try {
+    await mutex.runExclusive(async () => {
+      const poapLink = await assignPoapToUser(screenName);
+
+      if (!poapLink) {
+        return res.status(404).json({ error: 'No POAPs available' });
+      }
+
+      return res.json({ poapLink });
+    });
+  } catch (error) {
+    console.error('Error claiming POAP:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/verify-attestation', async (req, res) => {
+  const { attestation } = req.body;
+  if (!attestation) {
+    return res.status(400).send('Missing attestation');
+  }
+
+  try {
+    const notaryUrl = attestation.meta.notaryUrl;
+    const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
+
+    const presentation = await verify(attestation.data, notaryPem);
+
+    const presentationObj = {
+      sent: presentation.sent,
+      recv: presentation.recv,
+    };
+    res.json({ presentationObj });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send('Error verifying attestation');
+  }
+});
+
 app.get('*', (req, res) => {
   try {
     const storeConfig: AppRootState = {
@@ -105,51 +177,6 @@ app.get('*', (req, res) => {
     </body>
   </html>
   `);
-  }
-});
-
-app.post('/poap-claim', async (req, res) => {
-  const { screenName } = req.body;
-  if (!screenName) {
-    return res.status(400).json({ error: 'Missing screen_name' });
-  }
-
-  try {
-    await mutex.runExclusive(async () => {
-      const poapLink = await assignPoapToUser(screenName);
-
-      if (!poapLink) {
-        return res.status(404).json({ error: 'No POAPs available' });
-      }
-
-      return res.json({ poapLink });
-    });
-  } catch (error) {
-    console.error('Error claiming POAP:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.post('/verify-attestation', async (req, res) => {
-  const { attestation } = req.body;
-  if (!attestation) {
-    return res.status(400).send('Missing attestation');
-  }
-
-  try {
-    const notaryUrl = attestation.meta.notaryUrl;
-    const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
-
-    const presentation = await verify(attestation.data, notaryPem);
-
-    const presentationObj = {
-      sent: presentation.sent,
-      recv: presentation.recv,
-    };
-    res.json({ presentationObj });
-  } catch (e) {
-    console.error(e);
-    res.status(500).send('Error verifying attestation');
   }
 });
 
