@@ -17,6 +17,7 @@ export default function Steps(): ReactElement {
   const [step, setStep] = useState<number>(0);
   const [client, setClient] = useState<any>(null);
   const [pluginData, setPluginData] = useState<PresentationJSON | null>(null);
+  const [sessionId, setSessionId] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<any>(null);
   const [screenName, setScreenName] = useState<string>('');
@@ -77,17 +78,16 @@ export default function Steps(): ReactElement {
   async function handleRunPlugin() {
     try {
       setLoading(true);
-      const pluginData = await client.runPlugin(
-        'https://github.com/tlsnotary/tlsn-extension/raw/main/src/assets/plugins/twitter_profile.wasm',
+      const _sessionId = await client.runPlugin(
+        'http://localhost:60990' + '/twitter_profile.tlsn.wasm',
       );
-      setPluginData(pluginData);
-      console.log(pluginData);
+      setSessionId(_sessionId);
       const response = await fetch('/verify-attestation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ attestation: pluginData }),
+        body: JSON.stringify({ sessionId: _sessionId }),
       });
       if (response.status === 200) {
         const data = await response.json();
@@ -134,7 +134,7 @@ export default function Steps(): ReactElement {
                 Connect
               </button>
             )}
-            {step === 1 && !pluginData && (
+            {step === 1 && !pluginData && !sessionId && (
               <div className="flex flex-col items-center justify-center gap-2">
                 <ul className="flex flex-col items-center justify-center gap-1">
                   <li className="text-base font-light">
@@ -164,6 +164,14 @@ export default function Steps(): ReactElement {
                   Optional: Claim Your POAP
                 </h3>
                 <ClaimPoap screen_name={screenName} exploding={exploding} />
+              </div>
+            )}
+            {step === 1 && sessionId && (
+              <div className="flex flex-col items-center justify-center gap-2">
+                <h3 className="text-lg font-semibold text-center">
+                  Optional: Claim Your POAP
+                </h3>
+                <ClaimPoap sessionId={sessionId} exploding={exploding} />
               </div>
             )}
           </div>
@@ -239,9 +247,11 @@ function DisplayPluginData({
 function ClaimPoap({
   screen_name,
   exploding,
+  sessionId,
 }: {
-  screen_name: string;
+  screen_name?: string;
   exploding: boolean;
+  sessionId?: string;
 }): ReactElement {
   const [poapLink, setPoapLink] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -251,13 +261,13 @@ function ClaimPoap({
     setLoading(true);
     setError(null);
     try {
-      if (!screen_name) return;
+      if (!screen_name && !sessionId) return;
       const response = await fetch('/poap-claim', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ screenName: screen_name }),
+        body: JSON.stringify({ screenName: screen_name, sessionId }),
       });
       if (response.status === 200) {
         const data = await response.json();

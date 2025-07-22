@@ -10,6 +10,7 @@ import { Mutex } from 'async-mutex';
 import { verify } from '../rs/0.1.0-alpha.11/index.node';
 import { convertNotaryWsToHttp, fetchPublicKeyFromNotary } from './util/index';
 import { assignPoapToUser } from './util/index';
+import path from 'path';
 
 const app = express();
 const port = 3030;
@@ -41,7 +42,12 @@ const mutex = new Mutex();
 const sessions = new Map<string, string>();
 
 app.post('/update-session', async (req, res) => {
-  console.log('update-session', req.body);
+  if (
+    req.headers['x-verifier-secret-key'] !== process.env.VERIFIER_SECRET_KEY
+  ) {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
   const { screen_name, session_id } = req.body;
 
   if (!screen_name || !session_id) {
@@ -66,14 +72,16 @@ app.post('/check-session', async (req, res) => {
 });
 
 app.post('/poap-claim', async (req, res) => {
-  const { screenName } = req.body;
-  if (!screenName) {
-    return res.status(400).json({ error: 'Missing screen_name' });
+  const { screenName, sessionId } = req.body;
+  const sn = screenName || sessions.get(sessionId);
+
+  if (!sn) {
+    return res.status(400).json({ error: 'Missing screen_name or sessionId' });
   }
 
   try {
     await mutex.runExclusive(async () => {
-      const poapLink = await assignPoapToUser(screenName);
+      const poapLink = await assignPoapToUser(sn);
 
       if (!poapLink) {
         return res.status(404).json({ error: 'No POAPs available' });
@@ -88,9 +96,18 @@ app.post('/poap-claim', async (req, res) => {
 });
 
 app.post('/verify-attestation', async (req, res) => {
-  const { attestation } = req.body;
-  if (!attestation) {
-    return res.status(400).send('Missing attestation');
+  const { attestation, sessionId } = req.body;
+  if (!attestation || !sessionId) {
+    return res.status(400).send('Missing attestation or sessionId');
+  }
+
+  if (sessionId) {
+    const sn = sessions.get(sessionId);
+    if (!sn) {
+      return res.status(400).send('Session not found');
+    } else {
+      return res.json({ status: 'success', screen_name: sn });
+    }
   }
 
   try {
