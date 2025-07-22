@@ -79,7 +79,7 @@ export default function Steps(): ReactElement {
     try {
       setLoading(true);
       const _sessionId = await client.runPlugin(
-        'http://localhost:60990' + '/twitter_profile.tlsn.wasm',
+        'http://localhost:51982' + '/twitter_profile.tlsn.wasm',
       );
       setSessionId(_sessionId);
       const response = await fetch('/verify-attestation', {
