@@ -161,6 +161,11 @@ var options = {
           to: path.join(__dirname, "build", "ui"),
           force: true,
         },
+        {
+          from: "static/twitter_profile.tlsn.wasm",
+          to: path.join(__dirname, "build", "ui"),
+          force: true,
+        },
       ],
     }),
     new webpack.ProvidePlugin({
