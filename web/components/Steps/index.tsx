@@ -5,10 +5,8 @@ import Step from '@mui/material/Step';
 import Box from '@mui/material/Box';
 import StepLabel from '@mui/material/StepLabel';
 import classNames from 'classnames';
-import type { PresentationJSON } from 'tlsn-js/build/types';
 import Button from '../Button';
 import ConfettiExplosion, { ConfettiProps } from 'react-confetti-explosion';
-import { formatDataPreview } from '../../utils/utils';
 
 const steps = ['Connect Extension', 'Run Plugin'];
 
@@ -16,10 +14,8 @@ export default function Steps(): ReactElement {
   const [extensionInstalled, setExtensionInstalled] = useState(false);
   const [step, setStep] = useState<number>(0);
   const [client, setClient] = useState<any>(null);
-  const [pluginData, setPluginData] = useState<PresentationJSON | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [transcript, setTranscript] = useState<any>(null);
   const [screenName, setScreenName] = useState<string>('');
   const [exploding, setExploding] = useState<boolean>(false);
 
@@ -54,17 +50,6 @@ export default function Steps(): ReactElement {
     };
   }, []);
 
-  useEffect(() => {
-    if (transcript) {
-      const match = transcript.recv.match(/"screen_name":"([^"]+)"/);
-      const screenName = match ? match[1] : null;
-      setScreenName(screenName);
-      if (screenName) {
-        setExploding(true);
-      }
-    }
-  }, [transcript]);
-
   async function handleConnect() {
     try {
       //@ts-ignore
@@ -82,16 +67,20 @@ export default function Steps(): ReactElement {
         window.location.origin + '/twitter_profile.tlsn.wasm',
       );
       setSessionId(_sessionId);
-      const response = await fetch('/verify-attestation', {
+      console.log('Session ID:', _sessionId);
+
+      const response = await fetch('/check-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sessionId: _sessionId }),
+        body: JSON.stringify({ session_id: _sessionId }),
       });
+      console.log('Check session response:', response);
       if (response.status === 200) {
         const data = await response.json();
-        setTranscript(data.presentationObj);
+        console.log('Response: Plugin data:', data);
+        setScreenName(data.screen_name);
         setStep(1);
       } else {
         console.log(await response.text());
@@ -134,7 +123,7 @@ export default function Steps(): ReactElement {
                 Connect
               </button>
             )}
-            {step === 1 && !pluginData && !sessionId && (
+            {step === 1 && !sessionId && (
               <div className="flex flex-col items-center justify-center gap-2">
                 <ul className="flex flex-col items-center justify-center gap-1">
                   <li className="text-base font-light">
@@ -158,92 +147,22 @@ export default function Steps(): ReactElement {
                 </Button>
               </div>
             )}
-            {step === 1 && pluginData && screenName && (
+            {step === 1 && sessionId && screenName && (
               <div className="flex flex-col items-center justify-center gap-2">
-                Successfully verified your Twitter screen name{" "}
-                <span className="font-mono bg-gray-100 px-2 py-1 rounded text-sm">
-                  {screenName}
-                </span>
+                <h3 className="text-lg font-semibold text-center">
+                  Successfully verified your Twitter screen name <i>"{screenName}"</i>
+                </h3>
                 <h3 className="text-lg font-semibold text-center">
                   Optional: Claim Your POAP
                 </h3>
-                <ClaimPoap screen_name={screenName} exploding={exploding} />
-              </div>
-            )}
-            {step === 1 && sessionId && (
-              <div className="flex flex-col items-center justify-center gap-2">
-                <h3 className="text-lg font-semibold text-center">
-                  Optional: Claim Your POAP
-                </h3>
-                <ClaimPoap sessionId={sessionId} exploding={exploding} />
+                <ClaimPoap sessionId={sessionId} screen_name={screenName} exploding={exploding} />
               </div>
             )}
           </div>
-          {pluginData && (
-            <DisplayPluginData
-              step={step}
-              pluginData={pluginData}
-              transcript={transcript}
-            />
-          )}
         </>
       ) : (
         <InstallExtensionPrompt />
       )}
-    </div>
-  );
-}
-
-function DisplayPluginData({
-  step,
-  pluginData,
-  transcript,
-}: {
-  step: number;
-  pluginData: any;
-  transcript: any;
-}): ReactElement {
-  const [tab, setTab] = useState<'sent' | 'recv'>('sent');
-
-  return (
-    <div className="flex justify-center items-center space-x-4 mt-8">
-      <div className="w-96">
-        <div className="p-2 bg-gray-200 border-t rounded-t-md text-center text-lg font-semibold">
-          Attestation
-        </div>
-        <div className="p-4 bg-gray-100 border rounded-b-md h-96 text-left overflow-auto">
-          <pre className="text-sm text-gray-700 whitespace-pre-wrap text-[12px]">
-            {formatDataPreview(pluginData)}
-          </pre>
-        </div>
-      </div>
-      <div className="w-96">
-        <div className="p-2 bg-gray-200 border-t rounded-t-md text-center text-lg font-semibold">
-          Presentation
-        </div>
-        <div className="bg-gray-100 border rounded-b-md h-96 overflow-auto">
-          <div className="flex border-b">
-            <button
-              onClick={() => setTab('sent')}
-              className={`p-2 w-1/2 text-center ${tab === 'sent' ? 'bg-slate-500 text-white' : 'bg-white text-black'}`}
-            >
-              Sent
-            </button>
-            <button
-              onClick={() => setTab('recv')}
-              className={`p-2 w-1/2 text-center ${tab === 'recv' ? 'bg-slate-500 text-white' : 'bg-white text-black'}`}
-            >
-              Received
-            </button>
-          </div>
-          <div className="p-4 text-left">
-            <pre className="text-[10px] text-gray-700 whitespace-pre-wrap">
-              {transcript &&
-                (tab === 'sent' ? transcript.sent : transcript.recv)}
-            </pre>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

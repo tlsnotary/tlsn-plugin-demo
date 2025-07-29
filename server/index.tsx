@@ -48,6 +48,8 @@ app.post('/update-session', async (req, res) => {
     return res.status(403).json({ error: 'Unauthorized' });
   }
 
+  console.log('Update session:', req.body);
+
   const { screen_name, session_id } = req.body;
 
   if (!screen_name || !session_id) {
@@ -55,6 +57,7 @@ app.post('/update-session', async (req, res) => {
   }
 
   sessions.set(session_id, screen_name);
+  console.log('Updated session:', session_id, screen_name);
   res.json({ success: true });
 });
 
@@ -63,7 +66,13 @@ app.post('/check-session', async (req, res) => {
   if (!session_id) {
     return res.status(400).json({ error: 'Missing session_id' });
   }
-  const screen_name = sessions.get(session_id);
+  let screen_name: string | undefined;
+  for (let i = 0; i < 5; i++) {
+    screen_name = sessions.get(session_id);
+    if (screen_name) break;
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  console.log('Check session:', session_id, screen_name);
   if (!screen_name) {
     return res.status(404).json({ error: 'Session not found' });
   }
