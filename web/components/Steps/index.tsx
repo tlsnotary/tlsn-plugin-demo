@@ -160,6 +160,10 @@ export default function Steps(): ReactElement {
             )}
             {step === 1 && pluginData && screenName && (
               <div className="flex flex-col items-center justify-center gap-2">
+                Successfully verified your Twitter screen name{" "}
+                <span className="font-mono bg-gray-100 px-2 py-1 rounded text-sm">
+                  {screenName}
+                </span>
                 <h3 className="text-lg font-semibold text-center">
                   Optional: Claim Your POAP
                 </h3>

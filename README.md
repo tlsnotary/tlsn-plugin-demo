@@ -27,6 +27,5 @@ This demo works by leveraging the [Provider API]((https://github.com/tlsnotary/t
 
 1. Clone this repository
 2. Run `npm install`
-3. Insert a `poaps.txt` of POAP mint links in `server/util`
-4. Run `npm run dev`
+4. Run `VERIFIER_SECRET_KEY=demo npm run dev`
 5. Enjoy the demo
