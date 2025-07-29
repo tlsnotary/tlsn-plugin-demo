@@ -1,16 +1,10 @@
 import express from 'express';
-import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import App from '../web/pages/App';
-import configureAppStore, { AppRootState } from '../web/store';
-import { Provider } from 'react-redux';
 import { Mutex } from 'async-mutex';
 //@ts-ignore
-import { verify } from '../rs/0.1.0-alpha.11/index.node';
-import { convertNotaryWsToHttp, fetchPublicKeyFromNotary } from './util/index';
 import { assignPoapToUser } from './util/index';
-import path from 'path';
 
 const app = express();
 const port = 3030;
@@ -108,65 +102,14 @@ app.post('/poap-claim', async (req, res) => {
   }
 });
 
-app.post('/verify-attestation', async (req, res) => {
-  const { attestation, sessionId } = req.body;
-  if (!attestation || !sessionId) {
-    return res.status(400).send('Missing attestation or sessionId');
-  }
-
-  if (sessionId) {
-    const sn = sessions.get(sessionId);
-    if (!sn) {
-      return res.status(400).send('Session not found');
-    } else {
-      return res.json({ status: 'success', screen_name: sn });
-    }
-  }
-
-  try {
-    const notaryUrl = attestation.meta.notaryUrl;
-    const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
-
-    const presentation = await verify(attestation.data, notaryPem);
-
-    const presentationObj = {
-      sent: presentation.sent,
-      recv: presentation.recv,
-    };
-    res.json({ presentationObj });
-  } catch (e) {
-    console.error(e);
-    res.status(500).send('Error verifying attestation');
-  }
-});
-
 app.get('*', (req, res) => {
   try {
-    const storeConfig: AppRootState = {
-      attestation: {
-        raw: {
-          version: '0.1.0-alpha.11',
-          data: '',
-          meta: {
-            notaryUrl: '',
-            websocketProxyUrl: '',
-            pluginUrl: '',
-          },
-        },
-      },
-    };
-
-    const store = configureAppStore(storeConfig);
-
     const html = renderToString(
-      <Provider store={store}>
-        <StaticRouter location={req.url}>
-          <App />
-        </StaticRouter>
-      </Provider>,
+      <StaticRouter location={req.url}>
+        <App />
+      </StaticRouter>
     );
 
-    const preloadedState = store.getState();
 
     res.send(`
     <!DOCTYPE html>
@@ -177,7 +120,6 @@ app.get('*', (req, res) => {
         <link rel="icon" type="image/png" href="/favicon.png" />
         <title>TLSN Plugin Demo</title>
         <script>
-        window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState)};
       </script>
       <script defer src="/index.bundle.js"></script>
       </head>

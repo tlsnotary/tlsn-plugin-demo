@@ -1,7 +1,6 @@
 import * as Comlink from 'comlink';
-import init, { Presentation } from 'tlsn-js';
+import init from 'tlsn-js';
 
 Comlink.expose({
   init,
-  Presentation,
 });

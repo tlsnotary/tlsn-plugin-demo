@@ -135,11 +135,7 @@ export default function Steps(): ReactElement {
                   </li>
                   <li className="text-base font-light">
                     Don't close the sidebar or refresh the page until
-                    notarization is finished
-                  </li>
-                  <li className="text-base font-light">
-                    If successful, the attestation and verified data will be
-                    displayed below
+                    verification is finished
                   </li>
                 </ul>
                 <Button onClick={handleRunPlugin} loading={loading}>
@@ -249,7 +245,7 @@ function InstallExtensionPrompt() {
           webserver.
         </p>
         <p className="text-base font-light">
-          The webserver will verify your attestation and give a POAP in return (
+          The webserver will verify your proof and give a POAP in return (
           <span className="font-semibold">while supplies last</span>)
         </p>
       </div>
