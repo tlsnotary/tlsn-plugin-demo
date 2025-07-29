@@ -2,14 +2,24 @@ import path from 'path';
 import fs from 'fs';
 import admin from 'firebase-admin';
 
-const serviceAccount = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'util/firebase-admin.json'), 'utf8')
-);
+let serviceAccount: any;
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-const db = admin.firestore();
+let db: any;
+
+if (process.env.NODE_ENV === 'development') {
+  console.log(`Using dummy Firebase service account in development mode`);
+  db = {};
+} else {
+  // Use the real config in production
+  serviceAccount = JSON.parse(
+    fs.readFileSync(path.join(__dirname, 'util/firebase-admin.json'), 'utf8')
+  );
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+  const db = admin.firestore();
+}
+
 
 export function convertNotaryWsToHttp(notaryWs: string) {
   const { protocol, pathname, hostname, port } = new URL(notaryWs);

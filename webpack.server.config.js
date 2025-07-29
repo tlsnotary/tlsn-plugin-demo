@@ -85,11 +85,13 @@ const options = {
     new CleanWebpackPlugin({ verbose: false }),
     new webpack.ProgressPlugin(),
     new webpack.EnvironmentPlugin(['NODE_ENV']),
-    new CopyWebpackPlugin({
-      patterns: [
-        { from: 'server/util/firebase-admin.json', to: 'util/' },
-      ],
-    }),
+    !isDevelopment
+      ? new CopyWebpackPlugin({
+        patterns: [
+          { from: 'server/util/firebase-admin.json', to: 'util/' },
+        ],
+      })
+      : null,
     new CompressionPlugin({
       algorithm: 'gzip',
       test: /\.(js|css|html|svg)$/,
