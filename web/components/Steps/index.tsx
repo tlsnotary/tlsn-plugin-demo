@@ -146,10 +146,10 @@ export default function Steps(): ReactElement {
             {step === 1 && sessionId && screenName && (
               <div className="flex flex-col items-center justify-center gap-2">
                 <h3 className="text-lg font-semibold text-center">
-                  Successfully verified your Twitter screen name <i>"{screenName}"</i>
+                  🎉 Successfully verified your Twitter screen name <i>"{screenName}"</i> 🎉
                 </h3>
                 <h3 className="text-lg font-semibold text-center">
-                  Optional: Claim Your POAP
+                  Claim your POAP (Optional)
                 </h3>
                 <ClaimPoap sessionId={sessionId} screen_name={screenName} exploding={exploding} />
               </div>
