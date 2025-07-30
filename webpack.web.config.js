@@ -78,7 +78,6 @@ var options = {
       },
       {
         test: /\.(ts|tsx)$/,
-        exclude: /node_modules\/(?!(tlsn-js|tlsn-js-v5)\/).*/,
         use: [
           {
             loader: require.resolve("ts-loader"),
@@ -146,11 +145,6 @@ var options = {
     // }),
     new CopyWebpackPlugin({
       patterns: [
-        {
-          from: 'node_modules/tlsn-js/build',
-          to: path.join(__dirname, 'build', 'ui'),
-          force: true,
-        },
         {
           from: "static/favicon.png",
           to: path.join(__dirname, "build", "ui"),
