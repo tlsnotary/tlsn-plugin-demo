@@ -102,16 +102,8 @@ app.post('/poap-claim', async (req, res) => {
   }
 });
 
-app.get('*', (req, res) => {
-  try {
-    const html = renderToString(
-      <StaticRouter location={req.url}>
-        <App />
-      </StaticRouter>
-    );
-
-
-    res.send(`
+function renderHTML(html: string = '', preloadedState: any = {}) {
+  return `
     <!DOCTYPE html>
     <html lang="en">
       <head>
@@ -120,35 +112,31 @@ app.get('*', (req, res) => {
         <link rel="icon" type="image/png" href="/favicon.png" />
         <title>TLSN Plugin Demo</title>
         <script>
-      </script>
-      <script defer src="/index.bundle.js"></script>
+          window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState)};
+        </script>
+        <script defer src="/index.bundle.js"></script>
       </head>
       <body>
         <div id="root">${html}</div>
         <div id="modal-root"></div>
       </body>
     </html>
-    `);
-  } catch (e) {
-    res.send(`
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <link rel="icon" type="image/png" href="/favicon.png" />
-      <title>TLSN Plugin Demo</title>
-      <script>
-      window.__PRELOADED_STATE__ = {};
-    </script>
-    <script defer src="/index.bundle.js"></script>
-    </head>
-    <body>
-      <div id="root"></div>
-      <div id="modal-root"></div>
-    </body>
-  </html>
-  `);
+  `;
+}
+
+app.get('*', (req, res) => {
+  try {
+    const html = renderToString(
+      <StaticRouter location={req.url}>
+        <App />
+      </StaticRouter>
+    );
+
+    res.send(renderHTML(html));
+  } catch (error) {
+    console.error('SSR Error:', error);
+    // Send client-only version on SSR error
+    res.send(renderHTML());
   }
 });
 
