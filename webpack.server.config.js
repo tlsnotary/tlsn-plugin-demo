@@ -24,6 +24,9 @@ const options = {
     clean: true,
     publicPath: ASSET_PATH,
   },
+  externals: {
+    express: 'commonjs express',
+  },
   module: {
     rules: [
       {
