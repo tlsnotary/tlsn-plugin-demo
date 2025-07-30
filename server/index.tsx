@@ -84,7 +84,7 @@ app.post('/poap-claim', async (req, res) => {
 
   try {
     await mutex.runExclusive(async () => {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.POAP !== 'true') {
         return res.status(404).json({ error: 'No POAPs available in development mode' });
       }
 

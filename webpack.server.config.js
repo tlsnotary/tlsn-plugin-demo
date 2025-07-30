@@ -8,6 +8,8 @@ var { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ASSET_PATH = process.env.ASSET_PATH || '/';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
+const isPOAP = process.env.POAP === 'true';
+
 
 const options = {
   target: 'node',
@@ -87,7 +89,7 @@ const options = {
     new CleanWebpackPlugin({ verbose: false }),
     new webpack.ProgressPlugin(),
     new webpack.EnvironmentPlugin(['NODE_ENV']),
-    !isDevelopment
+    isPOAP
       ? new CopyWebpackPlugin({
         patterns: [
           { from: 'server/util/firebase-admin.json', to: 'util/' },

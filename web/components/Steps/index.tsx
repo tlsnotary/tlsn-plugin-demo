@@ -97,7 +97,7 @@ export default function Steps(): ReactElement {
       {extensionInstalled ? (
         <>
           <div className="flex flex-row items-center gap-2 text-slate-600 font-bold pb-2">
-            Connected{' '}
+            Extension Connected{' '}
             <div
               className={classNames(
                 'rounded-full h-[10px] w-[10px] border-[2px]',
@@ -108,15 +108,6 @@ export default function Steps(): ReactElement {
               )}
             ></div>
           </div>
-          <Box className="w-full max-w-3xl mt-6 pb-4">
-            <Stepper activeStep={step} alternativeLabel>
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          </Box>
           <div className="flex gap-3">
             {step === 0 && (
               <button onClick={handleConnect} className="button">
@@ -125,22 +116,45 @@ export default function Steps(): ReactElement {
             )}
             {step === 1 && !sessionId && (
               <div className="flex flex-col items-center justify-center gap-2">
-                <ul className="flex flex-col items-center justify-center gap-1">
-                  <li className="text-base font-light">
-                    This will open a new tab to Twitter/X and the sidebar for
-                    the extension
-                  </li>
-                  <li className="text-base font-light">
-                    Click through the steps in the sidebar
-                  </li>
-                  <li className="text-base font-light">
-                    Don't close the sidebar or refresh the page until
-                    verification is finished
-                  </li>
-                </ul>
                 <Button onClick={handleRunPlugin} loading={loading}>
-                  Run Plugin
+                  Prove Twitter Screen Name
                 </Button>
+                <div>
+                  What will happen when you click "Prove Twitter Screen Name"?
+                  <ul className="flex flex-col items-center justify-center gap-1">
+                    <li className="text-base font-light">
+                      The TLSNotary extension will open a pop up, asking you permission to run the plugin and send the unredacted data (just the screen name in this case) to the verifier server.
+                    </li>
+                    <li className="text-base font-light">
+                      If you accept, the extension will open X/Twitter in a new tab and will show a sidebar with steps to prove your Twitter screen name:
+                      <ul className="flex flex-col items-center justify-center gap-1">
+                        <li className="text-base font-light">
+                          Step 1: go to your Twitter profile
+                        </li>
+                        <li className="text-base font-light">
+                          Step 2: log in if you haven't yet
+                        </li>
+                        <li className="text-base font-light">
+                          Step 3: the extensions proves your Twitter handle to the verifier server
+                        </li>
+                        <li className="text-base font-light">
+                          When step 3 is running, you can close the Twitter/X tab, but don't close the sidebar.
+                        </li>
+                      </ul>
+                    </li>
+                    <li className="text-base font-light">
+                      {process.env.POAP === 'true' ? (
+                        <>
+                          If successful, your screen name will be shown here and you can claim a POAP.
+                        </>
+                      ) : (
+                        <>
+                          If successful, your screen name will be shown here.
+                        </>
+                      )}
+                    </li>
+                  </ul>
+                </div>
               </div>
             )}
             {step === 1 && sessionId && screenName && (
@@ -148,10 +162,14 @@ export default function Steps(): ReactElement {
                 <h3 className="text-lg font-semibold text-center">
                   🎉 Successfully verified your Twitter screen name <i>"{screenName}"</i> 🎉
                 </h3>
-                <h3 className="text-lg font-semibold text-center">
-                  Claim your POAP (Optional)
-                </h3>
-                <ClaimPoap sessionId={sessionId} screen_name={screenName} exploding={exploding} />
+                {process.env.POAP === 'true' && (
+                  <>
+                    <h3 className="text-lg font-semibold text-center">
+                      Claim your POAP (Optional)
+                    </h3>
+                    <ClaimPoap sessionId={sessionId} screen_name={screenName} exploding={exploding} />
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -230,6 +248,10 @@ function ClaimPoap({
 }
 
 function InstallExtensionPrompt() {
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
   return (
     <div className="flex flex-col justify-center items-center gap-2">
       <div className="flex flex-col justify center items-center gap-2 pb-4">
@@ -244,15 +266,14 @@ function InstallExtensionPrompt() {
           In this demo you'll prove that you own a Twitter/X account to the
           webserver.
         </p>
-        <p className="text-base font-light">
-          The webserver will verify your proof and give a POAP in return (
-          <span className="font-semibold">while supplies last</span>)
-        </p>
+        {process.env.POAP === 'true' && (
+          <p className="text-base font-light">
+            The webserver will verify your proof and give a POAP in return (
+            <span className="font-semibold">while supplies last</span>)
+          </p>
+        )}
       </div>
       <p className="font-bold">Please install the extension to proceed </p>
-      <p className="font-bold">
-        You will need to refresh your browser after installing the extension
-      </p>
       <a
         href="https://chromewebstore.google.com/detail/tlsn-extension/gcfkkledipjbgdbimfpijgbkhajiaaph"
         target="_blank"
@@ -260,6 +281,16 @@ function InstallExtensionPrompt() {
       >
         Install TLSN Extension
       </a>
+      <p className="font-bold">
+        You will need to refresh your browser after installing the extension
+      </p>
+      <a
+        onClick={handleRefresh}
+        className="button"
+      >
+        Refresh Page
+      </a>
+
     </div>
   );
 }

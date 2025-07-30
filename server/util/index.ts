@@ -6,8 +6,8 @@ let serviceAccount: any;
 
 let db: any;
 
-if (process.env.NODE_ENV === 'development') {
-  console.log(`Using dummy Firebase service account in development mode`);
+if (process.env.POAP !== 'true') {
+  console.log(`POAP feature is disabled`);
   db = {};
 } else {
   // Use the real config in production
