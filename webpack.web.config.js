@@ -174,21 +174,7 @@ var options = {
   ].filter(Boolean),
   infrastructureLogging: {
     level: 'info',
-  },
-  // Required by wasm-bindgen-rayon, in order to use SharedArrayBuffer on the Web
-  // Ref:
-  //  - https://github.com/GoogleChromeLabs/wasm-bindgen-rayon#setting-up
-  //  - https://web.dev/i18n/en/coop-coep/
-  devServer: {
-    headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin',
-    },
-  },
-  // Enable WebAssembly support
-  experiments: {
-    asyncWebAssembly: true,
-  },
+  }
 };
 
 if (process.env.NODE_ENV === 'development') {
