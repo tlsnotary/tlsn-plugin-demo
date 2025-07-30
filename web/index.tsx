@@ -10,7 +10,12 @@ delete window.__PRELOADED_STATE__;
 (async () => {
   hydrateRoot(
     document.getElementById('root')!,
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <App />
     </BrowserRouter>
   );
