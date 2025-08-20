@@ -255,7 +255,7 @@ export default function Steps(): ReactElement {
                       </p>
 
                       <div className="pt-4">
-                        <ClaimPoap sessionId={sessionId} screen_name={screenName} exploding={exploding} />
+                        <ClaimPoap sessionId={sessionId} exploding={exploding} />
                       </div>
                     </div>
                   </div>
@@ -309,11 +309,9 @@ export default function Steps(): ReactElement {
 }
 
 function ClaimPoap({
-  screen_name,
   exploding,
   sessionId,
 }: {
-  screen_name?: string;
   exploding: boolean;
   sessionId?: string;
 }): ReactElement {
@@ -325,13 +323,13 @@ function ClaimPoap({
     setLoading(true);
     setError(null);
     try {
-      if (!screen_name && !sessionId) return;
+      if (!sessionId) return;
       const response = await fetch('/poap-claim', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ screenName: screen_name, sessionId }),
+        body: JSON.stringify({ sessionId }),
       });
       if (response.status === 200) {
         const data = await response.json();
@@ -438,7 +436,7 @@ function InstallExtensionPrompt() {
         {process.env.POAP === 'true' && (
           <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-center text-yellow-800">
-              🎁 <strong>Special offer:</strong> Get a POAP (Proof of Attendance Protocol) token after verification!{' '}
+              🎁 <strong>Special offer:</strong> Get a POAP (Proof of Attendance Protocol) token after verification!{' '}<br />
               <span className="font-semibold">(while supplies last)</span>
             </p>
           </div>

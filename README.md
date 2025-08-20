@@ -26,21 +26,12 @@ This demo works by leveraging the [Provider API]((https://github.com/tlsnotary/t
 ## Installing and Running
 
 1. Build:
-```sh
-docker build -t tlsn-demo .
-```
+    ```sh
+    docker build -t tlsn-demo .
+    ```
+    To build with POAPS enabled, run: `docker build --build-arg ENABLE_POAP=true -t tlsn-demo .`
 2. Run:
-```sh
-docker run --rm -p 3030:3030 -p 7047:7047  -it tlsn-demo
-```
+    ```sh
+    docker run --rm -p 3030:3030 -p 7047:7047  -it tlsn-demo
+    ```
 3. Visit <http://localhost:3030>
-
-
-## POAPs
-
-TODO
-
-To build with POAPs enabled, run:
-```sh
-docker build --build-arg ENABLE_POAP=true -t tlsn-demo .
-```

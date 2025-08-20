@@ -5,6 +5,7 @@ import App from '../web/pages/App';
 import { Mutex } from 'async-mutex';
 //@ts-ignore
 import { assignPoapToUser } from './util/index';
+import { LRUCache } from 'lru-cache'
 
 const app = express();
 const port = 3030;
@@ -33,7 +34,10 @@ app.use(express.static('build/ui'));
 app.use(express.json());
 const mutex = new Mutex();
 
-const sessions = new Map<string, string>();
+const sessions = new LRUCache<string, string>({
+  max: 10000,
+  ttl: 1000 * 60 * 60, // 60 minutes
+});
 
 app.post('/update-session', async (req, res) => {
   if (
@@ -70,16 +74,17 @@ app.post('/check-session', async (req, res) => {
   if (!screen_name) {
     return res.status(404).json({ error: 'Session not found' });
   }
-  sessions.delete(session_id);
   res.json({ screen_name });
 });
 
 app.post('/poap-claim', async (req, res) => {
-  const { screenName, sessionId } = req.body;
-  const sn = screenName || sessions.get(sessionId);
+  const { sessionId } = req.body;
+  const sn = sessions.get(sessionId);
+
+  console.log('Checking Poap claim:', sessionId, sn);
 
   if (!sn) {
-    return res.status(400).json({ error: 'Missing screen_name or sessionId' });
+    return res.status(400).json({ error: 'Invalid screen_name or sessionId' });
   }
 
   try {
@@ -93,6 +98,8 @@ app.post('/poap-claim', async (req, res) => {
       if (!poapLink) {
         return res.status(404).json({ error: 'No POAPs available' });
       }
+
+      console.log('Serving POAP link:', poapLink);
 
       return res.json({ poapLink });
     });
