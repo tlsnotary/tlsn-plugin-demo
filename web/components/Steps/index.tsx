@@ -78,7 +78,7 @@ export default function Steps(): ReactElement {
     try {
       setLoading(true);
       const pluginData = await client.runPlugin(
-        'https://github.com/tlsnotary/tlsn-extension/raw/main/src/assets/plugins/twitter_profile.wasm',
+        'https://raw.githubusercontent.com/tlsnotary/tlsn-extension/cc3264f058ad2ebb0791830a1217fdd8bffd543f/src/assets/plugins/twitter_profile.wasm',
       );
       setPluginData(pluginData);
       console.log(pluginData);
