@@ -1,23 +1,9 @@
 ###########################################
-# Build stage 1: Build the demo application
-###########################################
-FROM node:18-slim AS demo-builder
-
-ARG ENABLE_POAP=false
-
-ENV POAP=${ENABLE_POAP}
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-###########################################
-# Build Stage 2: Build the Verifier
+# Build Stage 1: Build the Verifier
 ###########################################
 FROM ubuntu:24.04 as verifier-builder
+
+ARG VERIFIER_URL="http://localhost:7047"
 
 # Install build dependencies
 RUN apt-get update && \
@@ -47,16 +33,41 @@ RUN curl https://raw.githubusercontent.com/extism/js-pdk/main/install.sh -s | ba
 ENV PATH="/root/.xtp/bin:$PATH"
 
 # Clone and build TLSNotary (interactive-verifier branch)
-WORKDIR /app
-RUN git clone --branch interactive-verifier --single-branch https://github.com/tlsnotary/tlsn.git .
+WORKDIR /
+RUN git clone --branch interactive-verifier --single-branch https://github.com/tlsnotary/tlsn.git
 
-# Build the plugin
-WORKDIR /app/crates/notary/plugin/js
+# Build the Verifier plugin
+WORKDIR /tlsn/crates/notary/plugin/js
 RUN chmod +x prepare.sh && ./prepare.sh && xtp plugin build
 
 # Build the Verifier server
-WORKDIR /app/crates/notary/server
+WORKDIR /tlsn/crates/notary/server
 RUN cargo build --release
+
+# Build the prover plugin
+WORKDIR /
+RUN git clone --branch interactive-verifier --single-branch https://github.com/tlsnotary/tlsn-plugin-boilerplate.git
+WORKDIR /tlsn-plugin-boilerplate
+# replace "http://localhost:7047" with $VERIFIER_URL in config.json and src/index.ts
+RUN sed -i "s|http://localhost:7047|$VERIFIER_URL|g" config.json src/index.ts
+RUN npm ci; npm run build
+
+###########################################
+# Build stage 2: Build the demo application
+###########################################
+FROM node:18-slim AS demo-builder
+
+ARG ENABLE_POAP=false
+
+ENV POAP=${ENABLE_POAP}
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+COPY . .
+COPY --from=verifier-builder /tlsn-plugin-boilerplate/dist/*.tlsn.wasm ./static
+RUN npm run build
 
 ###########################################
 # Build Stage 3: Runtime
@@ -78,8 +89,8 @@ RUN npm ci --only=production && npm cache clean --force
 COPY --from=demo-builder --chown=nodejs:nodejs /app/build ./build
 
 WORKDIR /verifier
-COPY --from=verifier-builder /app/target/release/notary-server ./verifier
-COPY --from=verifier-builder /app/crates/notary/plugin/wasm/*.wasm /plugin/wasm/
+COPY --from=verifier-builder /tlsn/target/release/notary-server ./verifier
+COPY --from=verifier-builder /tlsn/crates/notary/plugin/wasm/*.wasm /plugin/wasm/
 
 # Install PM2 for process management
 RUN npm install -g pm2
