@@ -37,7 +37,10 @@ export default function Button(props: Props): ReactElement {
       {...btnProps}
     >
       {loading ? (
-        <Icon className="animate-spin" fa="fa-solid fa-spinner" size={2} />
+        <>
+          <span>Running TLSNotary plugin...</span>
+          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+        </>
       ) : (
         children
       )}

@@ -8,6 +8,8 @@ var { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const ASSET_PATH = process.env.ASSET_PATH || '/';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
+const isPOAP = process.env.POAP === 'true';
+
 
 const options = {
   target: 'node',
@@ -23,6 +25,9 @@ const options = {
     path: path.resolve(__dirname, 'build', 'server'),
     clean: true,
     publicPath: ASSET_PATH,
+  },
+  externals: {
+    express: 'commonjs express',
   },
   module: {
     rules: [
@@ -42,7 +47,6 @@ const options = {
       },
       {
         test: /\.(ts|tsx)$/,
-        exclude: /node_modules\/(?!(tlsn-js|tlsn-js-v5)\/).*/,
         use: [
           {
             loader: require.resolve("ts-loader"),
@@ -85,11 +89,13 @@ const options = {
     new CleanWebpackPlugin({ verbose: false }),
     new webpack.ProgressPlugin(),
     new webpack.EnvironmentPlugin(['NODE_ENV']),
-    new CopyWebpackPlugin({
-      patterns: [
-        { from: 'server/util/firebase-admin.json', to: 'util/' },
-      ],
-    }),
+    isPOAP
+      ? new CopyWebpackPlugin({
+        patterns: [
+          { from: 'server/util/firebase-admin.json', to: 'util/' },
+        ],
+      })
+      : null,
     new CompressionPlugin({
       algorithm: 'gzip',
       test: /\.(js|css|html|svg)$/,

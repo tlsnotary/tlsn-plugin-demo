@@ -2,35 +2,27 @@ import path from 'path';
 import fs from 'fs';
 import admin from 'firebase-admin';
 
-const serviceAccount = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'util/firebase-admin.json'), 'utf8'),
-);
+let serviceAccount: any;
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-const db = admin.firestore();
+let db: any;
 
-export function convertNotaryWsToHttp(notaryWs: string) {
-  const { protocol, pathname, hostname, port } = new URL(notaryWs);
-  const p = protocol === 'wss:' ? 'https:' : 'http:';
-  const pt = port ? `:${port}` : '';
-  const path = pathname === '/' ? '' : pathname.replace('/notarize', '');
-  const h = hostname === 'localhost' ? '127.0.0.1' : hostname;
-  return p + '//' + h + pt + path;
-}
+if (process.env.POAP !== 'true') {
+  console.log(`POAP feature is disabled`);
+  db = {};
+} else {
+  console.log(`POAP feature is enabled`);
 
-export async function fetchPublicKeyFromNotary(notaryUrl: string) {
-  try {
-    const url = new URL(notaryUrl);
-    const res = await fetch(notaryUrl + '/info');
-    const json: any = await res.json();
-    if (!json.publicKey) throw new Error('invalid response');
-    return json.publicKey;
-  } catch (e) {
-    console.error('Failed to fetch public key from notary', e);
-    return null;
-  }
+  // Use the real config in production
+  serviceAccount = JSON.parse(
+    fs.readFileSync(path.join(__dirname, 'util/firebase-admin.json'), 'utf8')
+  );
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+
+  db = admin.firestore();
+
 }
 
 export const getUserPoap = async (

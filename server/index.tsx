@@ -1,15 +1,11 @@
 import express from 'express';
-import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import App from '../web/pages/App';
-import configureAppStore, { AppRootState } from '../web/store';
-import { Provider } from 'react-redux';
 import { Mutex } from 'async-mutex';
 //@ts-ignore
-import { verify } from '../rs/0.1.0-alpha.12/index.node';
-import { convertNotaryWsToHttp, fetchPublicKeyFromNotary } from './util/index';
 import { assignPoapToUser } from './util/index';
+import { LRUCache } from 'lru-cache'
 
 const app = express();
 const port = 3030;
@@ -38,89 +34,72 @@ app.use(express.static('build/ui'));
 app.use(express.json());
 const mutex = new Mutex();
 
-app.get('*', (req, res) => {
-  try {
-    const storeConfig: AppRootState = {
-      attestation: {
-        raw: {
-          version: '0.1.0-alpha.12',
-          data: '',
-          meta: {
-            notaryUrl: '',
-            websocketProxyUrl: '',
-            pluginUrl: '',
-          },
-        },
-      },
-    };
+const sessions = new LRUCache<string, string>({
+  max: 10000,
+  ttl: 1000 * 60 * 60, // 60 minutes
+});
 
-    const store = configureAppStore(storeConfig);
-
-    const html = renderToString(
-      <Provider store={store}>
-        <StaticRouter location={req.url}>
-          <App />
-        </StaticRouter>
-      </Provider>,
-    );
-
-    const preloadedState = store.getState();
-
-    res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" type="image/png" href="/favicon.png" />
-        <title>TLSN Plugin Demo</title>
-        <script>
-        window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState)};
-      </script>
-      <script defer src="/index.bundle.js"></script>
-      </head>
-      <body>
-        <div id="root">${html}</div>
-        <div id="modal-root"></div>
-      </body>
-    </html>
-    `);
-  } catch (e) {
-    res.send(`
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <link rel="icon" type="image/png" href="/favicon.png" />
-      <title>TLSN Plugin Demo</title>
-      <script>
-      window.__PRELOADED_STATE__ = {};
-    </script>
-    <script defer src="/index.bundle.js"></script>
-    </head>
-    <body>
-      <div id="root"></div>
-      <div id="modal-root"></div>
-    </body>
-  </html>
-  `);
+app.post('/update-session', async (req, res) => {
+  if (
+    req.headers['x-verifier-secret-key'] !== process.env.VERIFIER_SECRET_KEY
+  ) {
+    return res.status(403).json({ error: 'Unauthorized' });
   }
+
+  console.log('Update session:', req.body);
+
+  const { screen_name, session_id } = req.body;
+
+  if (!screen_name || !session_id) {
+    return res.status(400).json({ error: 'Missing screen_name or session_id' });
+  }
+
+  sessions.set(session_id, screen_name);
+  console.log('Updated session:', session_id, screen_name);
+  res.json({ success: true });
+});
+
+app.post('/check-session', async (req, res) => {
+  const { session_id } = req.body;
+  if (!session_id) {
+    return res.status(400).json({ error: 'Missing session_id' });
+  }
+  let screen_name: string | undefined;
+  for (let i = 0; i < 5; i++) {
+    screen_name = sessions.get(session_id);
+    if (screen_name) break;
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  console.log('Check session:', session_id, screen_name);
+  if (!screen_name) {
+    return res.status(404).json({ error: 'Session not found' });
+  }
+  res.json({ screen_name });
 });
 
 app.post('/poap-claim', async (req, res) => {
-  const { screenName } = req.body;
-  if (!screenName) {
-    return res.status(400).json({ error: 'Missing screen_name' });
+  const { sessionId } = req.body;
+  const sn = sessions.get(sessionId);
+
+  console.log('Checking Poap claim:', sessionId, sn);
+
+  if (!sn) {
+    return res.status(400).json({ error: 'Invalid screen_name or sessionId' });
   }
 
   try {
     await mutex.runExclusive(async () => {
-      const poapLink = await assignPoapToUser(screenName);
+      if (process.env.POAP !== 'true') {
+        return res.status(404).json({ error: 'No POAPs available in development mode' });
+      }
+
+      const poapLink = await assignPoapToUser(sn);
 
       if (!poapLink) {
         return res.status(404).json({ error: 'No POAPs available' });
       }
+
+      console.log('Serving POAP link:', poapLink);
 
       return res.json({ poapLink });
     });
@@ -130,26 +109,41 @@ app.post('/poap-claim', async (req, res) => {
   }
 });
 
-app.post('/verify-attestation', async (req, res) => {
-  const { attestation } = req.body;
-  if (!attestation) {
-    return res.status(400).send('Missing attestation');
-  }
+function renderHTML(html: string = '', preloadedState: any = {}) {
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <title>TLSN Plugin Demo</title>
+        <script>
+          window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState)};
+        </script>
+        <script defer src="/index.bundle.js"></script>
+      </head>
+      <body>
+        <div id="root">${html}</div>
+        <div id="modal-root"></div>
+      </body>
+    </html>
+  `;
+}
 
+app.get('*', (req, res) => {
   try {
-    const notaryUrl = attestation.meta.notaryUrl;
-    const notaryPem = await fetchPublicKeyFromNotary(notaryUrl);
+    const html = renderToString(
+      <StaticRouter location={req.url}>
+        <App />
+      </StaticRouter>
+    );
 
-    const presentation = await verify(attestation.data, notaryPem);
-
-    const presentationObj = {
-      sent: presentation.sent,
-      recv: presentation.recv,
-    };
-    res.json({ presentationObj });
-  } catch (e) {
-    console.error(e);
-    res.status(500).send('Error verifying attestation');
+    res.send(renderHTML(html));
+  } catch (error) {
+    console.error('SSR Error:', error);
+    // Send client-only version on SSR error
+    res.send(renderHTML());
   }
 });
 

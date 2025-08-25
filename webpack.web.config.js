@@ -78,7 +78,6 @@ var options = {
       },
       {
         test: /\.(ts|tsx)$/,
-        exclude: /node_modules\/(?!(tlsn-js|tlsn-js-v5)\/).*/,
         use: [
           {
             loader: require.resolve("ts-loader"),
@@ -137,7 +136,7 @@ var options = {
     new CleanWebpackPlugin({ verbose: false }),
     new webpack.ProgressPlugin(),
     // expose and write the allowed env vars on the compiled bundle
-    new webpack.EnvironmentPlugin(['NODE_ENV']),
+    new webpack.EnvironmentPlugin({ NODE_ENV: 'development', POAP: 'false' }),
     // new HtmlWebpackPlugin({
     //   template: path.join(__dirname, 'static', 'index.html'),
     //   filename: 'index.html',
@@ -147,17 +146,17 @@ var options = {
     new CopyWebpackPlugin({
       patterns: [
         {
-          from: 'node_modules/tlsn-js/build',
-          to: path.join(__dirname, 'build', 'ui'),
-          force: true,
-        },
-        {
           from: "static/favicon.png",
           to: path.join(__dirname, "build", "ui"),
           force: true,
         },
         {
           from: "static/logo.svg",
+          to: path.join(__dirname, "build", "ui"),
+          force: true,
+        },
+        {
+          from: "static/twitter_profile.tlsn.wasm",
           to: path.join(__dirname, "build", "ui"),
           force: true,
         },
@@ -169,21 +168,7 @@ var options = {
   ].filter(Boolean),
   infrastructureLogging: {
     level: 'info',
-  },
-  // Required by wasm-bindgen-rayon, in order to use SharedArrayBuffer on the Web
-  // Ref:
-  //  - https://github.com/GoogleChromeLabs/wasm-bindgen-rayon#setting-up
-  //  - https://web.dev/i18n/en/coop-coep/
-  devServer: {
-    headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin',
-    },
-  },
-  // Enable WebAssembly support
-  experiments: {
-    asyncWebAssembly: true,
-  },
+  }
 };
 
 if (process.env.NODE_ENV === 'development') {
