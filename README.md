@@ -12,16 +12,11 @@ In this demo, you'll prove that you own a Twitter account to the web server. The
 - **Twitter Plugin**: [tlsn-plugin-boilerplate](https://github.com/tlsnotary/tlsn-plugin-boilerplate)
 - **TLSNotary Protocol, Notary Server, Browser Extension, and More**: [GitHub - TLSNotary](https://github.com/tlsnotary)
 
-
 For more details, visit the repositories above to explore the code and contribute to the project!
 
 ---
 
-
-
-
-This demo works by leveraging the [Provider API]((https://github.com/tlsnotary/tlsn-extension/wiki/TLSN-Provider-API)) functionality of the [TLSNotary Extension](https://github.com/tlsnotary/tlsn-extension)
-
+This demo works by leveraging the [Provider API](<(https://github.com/tlsnotary/tlsn-extension/wiki/TLSN-Provider-API)>) functionality of the [TLSNotary Extension](https://github.com/tlsnotary/tlsn-extension)
 
 ## Installing and Running
 
@@ -30,3 +25,5 @@ This demo works by leveraging the [Provider API]((https://github.com/tlsnotary/t
 3. Insert a `poaps.txt` of POAP mint links in `server/util`
 4. Run `npm run dev`
 5. Enjoy the demo
+
+This demo is hosted locally on port 3030. Visit the demo at: `http://localhost:3030` to explore interacting with the plugin.
