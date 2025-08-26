@@ -77,7 +77,7 @@ FROM node:18-slim AS production
 ARG ENABLE_POAP=false
 ENV POAP=${ENABLE_POAP}
 
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates netcat-openbsd && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
