@@ -85,7 +85,7 @@ RUN addgroup --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid 1001 --no-create-home nodejs
 
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --only=production
 COPY --from=demo-builder --chown=nodejs:nodejs /app/build ./build
 
 WORKDIR /verifier
