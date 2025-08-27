@@ -137,7 +137,7 @@ export default function Steps(): ReactElement {
                       </>
                     ) : (
                       <>
-                        🔐 Prove Twitter Screen Name
+                        🔐 Prove Twitter Handle
                       </>
                     )}
                   </Button>
@@ -146,7 +146,7 @@ export default function Steps(): ReactElement {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 w-full">
 
                   <h3 className="text-lg font-semibold text-blue-900 mb-4 text-center">
-                    What happens when you click "Prove Twitter Screen Name"?
+                    What happens when you click "Prove Twitter Handle"?
                   </h3>
 
                   <div className="space-y-4 text-gray-700">
@@ -155,7 +155,7 @@ export default function Steps(): ReactElement {
                         1
                       </div>
                       <p className="text-base leading-relaxed">
-                        The TLSNotary extension will open a popup, asking permission to run the plugin and send the unredacted data (just the screen name) to the verifier server.
+                        The TLSNotary extension will open a popup, asking permission to run the plugin and send the unredacted data (just the handle) to the verifier server.
                       </p>
                     </div>
 
@@ -194,11 +194,11 @@ export default function Steps(): ReactElement {
                       <p className="text-base leading-relaxed">
                         {process.env.POAP === 'true' ? (
                           <>
-                            If successful, your screen name will be shown here and you can claim a POAP.
+                            If successful, your handle will be shown here and you can claim a POAP.
                           </>
                         ) : (
                           <>
-                            If successful, your screen name will be shown here.
+                            If successful, your handle will be shown here.
                           </>
                         )}
                       </p>
@@ -232,7 +232,7 @@ export default function Steps(): ReactElement {
                     </h3>
                     <div className="bg-white rounded-lg p-4 border border-green-200">
                       <p className="text-lg text-gray-700">
-                        Screen name: <span className="font-bold text-green-700 text-xl">@{screenName}</span>
+                        Handle: <span className="font-bold text-green-700 text-xl">@{screenName}</span>
                       </p>
                     </div>
                   </div>
@@ -271,7 +271,7 @@ export default function Steps(): ReactElement {
                       <span className="text-blue-600">🔒</span>
                       <div>
                         <p className="font-semibold">Privacy Preserved</p>
-                        <p>Your sensitive data stayed private - only your screen name was verified</p>
+                        <p>Your sensitive data stayed private - only your handle was verified</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
@@ -427,7 +427,7 @@ function InstallExtensionPrompt() {
             <p className="text-gray-600 text-sm">
               {process.env.POAP === 'true'
                 ? 'Receive a POAP token as proof of verification'
-                : 'Your Twitter screen name is verified'
+                : 'Your Twitter handle is verified'
               }
             </p>
           </div>

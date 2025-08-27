@@ -84,7 +84,7 @@ app.post('/poap-claim', async (req, res) => {
   console.log('Checking Poap claim:', sessionId, sn);
 
   if (!sn) {
-    return res.status(400).json({ error: 'Invalid screen_name or sessionId' });
+    return res.status(400).json({ error: 'Invalid handle or sessionId' });
   }
 
   try {
